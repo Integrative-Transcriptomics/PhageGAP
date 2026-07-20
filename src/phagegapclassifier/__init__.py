@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import logging, joblib, torch, tomllib
 from flask import Flask
-from flask.sessions import NullSessionInterface
+from flask.sessions import NullSession
 from dotenv import load_dotenv
-from utils import set_determinism
-from data import extract_model_number
-from embed import monitor_load_embed_model
-from predict import monitor_load_predict_model
+from phagegapclassifier.utils import set_determinism
+from phagegapclassifier.data import extract_model_number
+from phagegapclassifier.embed import monitor_load_embed_model
+from phagegapclassifier.predict import monitor_load_predict_model
 
 
 # Initialize logging configuration.
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Load project configuration from config.toml.
-with open("config.toml", "r") as f:
+with open("config.toml", "rb") as f:
     config = tomllib.load(f)
 
 # Set determinism and environment.
@@ -53,12 +53,10 @@ logger.info(f"Instantiating PCA and t-SNE objects.")
 pca = joblib.load(config.get('manifold').get('pca_path', None))
 tsne = joblib.load(config.get('manifold').get('tsne_path', None))
 
-class NoSessionFlask(Flask):
-    session_interface = NullSessionInterface()
-
 # Initialize the Flask application without a session interface.
 logger.info(f"Initialize Flask application.")
-app = NoSessionFlask(__name__)
+app = Flask(__name__)
+app.session_interface = NullSession()
 
 # Set Flask application parameters.
 app.config["MAX_CONTENT_LENGTH"] = config.get('app').get('max_content_length', 500_000)
