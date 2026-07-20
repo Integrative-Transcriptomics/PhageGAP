@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Custom
+images/*
+manifold/*
+models/*
+.notes
+.vscode
+.local
