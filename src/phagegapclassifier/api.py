@@ -16,11 +16,12 @@ from traceback import print_exc
 logger = logging.getLogger(__name__)
 
 
-@app.get("/")
-def ping():
+@app.get("/health")
+def health():
     return "PhageGap Classifier is active.", 200
 
 # ibmidocker -> spock (134....)/predict
+"""
 @app.post("/predict")
 def predict():
     try:
@@ -54,3 +55,4 @@ def predict():
     except Exception as e :
         print_exc()
         return {"error": str(e)}, 500
+"""
