@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict
 from torch.nn.utils.rnn import pad_sequence
-from model import CNN, CNN_MLP
+from phagegapclassifier.model import CNN, CNN_MLP
 
 logger = logging.getLogger(__name__)
 
