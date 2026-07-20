@@ -67,13 +67,9 @@ app.config["MAX_FORM_PARTS"] = config.get('app').get('max_form_memory_size', 100
 from phagegapclassifier import api
 
 if __name__ == "__main__":
-	logger.info("Startup Check.")
-
 	# Start the Flask application.
-	"""
 	app.run(
 		debug=config.get('app').get('debug', False),
 		host=config.get('app').get('host', "0.0.0.0"),
 		port=config.get('app').gett('port', 5001)
 	)
-	"""
