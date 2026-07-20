@@ -1,0 +1,28 @@
+# TOML format configuration file for the `PhageGap Classifer` software.
+
+title = "PhageGap Classifer 1.0.0-alpha Configuration"
+
+[app]
+max_content_length = 500_000
+max_form_memory_size = 500_000
+max_form_parts = 1000
+host = "0.0.0.0"
+port = 5001
+debug = false
+
+[setup]
+seed = 42
+device = cuda
+
+[embed]
+model_type = prot_t5
+pool_layers = [ ]
+pool_strategy = mean
+
+[predict]
+model_path = cnn_model1_final.pt
+model_type = cnn
+
+[manifold]
+pca_path = pca.joblib
+tsne_path = tsne.joblib

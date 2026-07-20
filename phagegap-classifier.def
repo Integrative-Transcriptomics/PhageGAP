@@ -1,0 +1,41 @@
+Bootstrap: docker
+From: python:3.12-slim
+
+%labels
+    Author "Simon Hackl"
+    Version 1.0.0-alpha
+    Description "PhageGap Classifier"
+
+%files
+    src/phagegapclassifier/__init__.py /app/phagegapclassifier/__init__.py
+    src/phagegapclassifier/api.py /app/phagegapclassifier/api.py
+    src/phagegapclassifier/data.py /app/phagegapclassifier/data.py
+    src/phagegapclassifier/embed.py /app/phagegapclassifier/embed.py
+    src/phagegapclassifier/model.py /app/phagegapclassifier/model.py
+    src/phagegapclassifier/pool.py /app/phagegapclassifier/pool.py
+    src/phagegapclassifier/predict.py /app/phagegapclassifier/predict.py
+    src/phagegapclassifier/utils.py /app/phagegapclassifier/utils.py
+    config.toml /app/config.toml
+    .env /app/.env
+    requirements.txt /app/requirements.txt
+    manifold/pca.joblib /app/pca.joblib
+    manifold/tsne.joblib /app/tsne.joblib
+    models/cnn_model1_final.pt /app/cnn_model1_final.pt
+
+%post
+    cd /app
+    python -m pip install --no-cache-dir setuptools wheel
+    python -m pip install --no-cache-dir -r requirements.txt
+
+%environment
+    export HOST=0.0.0.0
+    export PORT=8080
+    export PYTHONUNBUFFERED=1
+
+%runscript
+    cd /app
+    exec uvicorn phagegapclassifier:app --host "${HOST}" --port "${PORT}"
+
+%startscript
+    cd /app
+    exec uvicorn phagegapclassifier:app --host "${HOST}" --port "${PORT}"
