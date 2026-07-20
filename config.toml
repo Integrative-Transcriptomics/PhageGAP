@@ -12,17 +12,17 @@ debug = false
 
 [setup]
 seed = 42
-device = cuda
+device = "cuda"
 
 [embed]
-model_type = prot_t5
+model_type = "prot_t5"
 pool_layers = [ ]
-pool_strategy = mean
+pool_strategy = "mean"
 
 [predict]
-model_path = cnn_model1_final.pt
-model_type = cnn
+model_path = "cnn_model1_final.pt"
+model_type = "cnn"
 
 [manifold]
-pca_path = pca.joblib
-tsne_path = tsne.joblib
+pca_path = "pca.joblib"
+tsne_path = "tsne.joblib"
