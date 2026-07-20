@@ -7,10 +7,10 @@ from __future__ import annotations
 import logging
 from flask import request
 from phagegapclassifier import config, app, plm, tokenizer, checkpoint, classifier, label_map, pca, tsne
-from data import parse_sequence_data, prepare_for_pca
-from predict import predict
-from embed import preprocess_df, compute_embeddings
-from pool import pool_embeddings
+from phagegapclassifier.data import parse_sequence_data, prepare_for_pca
+from phagegapclassifier.predict import predict
+from phagegapclassifier.embed import preprocess_df, compute_embeddings
+from phagegapclassifier.pool import pool_embeddings
 from traceback import print_exc
 
 logger = logging.getLogger(__name__)
