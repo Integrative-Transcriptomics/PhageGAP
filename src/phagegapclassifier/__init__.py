@@ -1,5 +1,6 @@
-import logging, joblib, torch, tomllib
 from __future__ import annotations
+
+import logging, joblib, torch, tomllib
 from flask import Flask
 from flask.sessions import NullSessionInterface
 from dotenv import load_dotenv
