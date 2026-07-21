@@ -30,6 +30,7 @@ def load_model(path: str, num: int, model_type: str):
 	cfg = checkpoint["config"]
 	label_map = checkpoint["label_map"]
 
+	# TODO: Adjust default parameters to prevent failure when loading models with incomplete configurations.
 	if model_type == "cnn":
 		model = CNN(
 			trial=None,
@@ -41,10 +42,10 @@ def load_model(path: str, num: int, model_type: str):
 			num_classes=len(label_map),
 			dilations=cfg["models"][f"model{num}"]["cnn"]["dilations"],
 			use_dilation=cfg["models"][f"model{num}"]["cnn"]["use_dilation"],
-			mean_max=cfg["models"][f"model{num}"]["cnn"]["mean_max"],
+			mean_max=cfg["models"][f"model{num}"]["cnn"].get("mean_max", False),
 			n_feats=0,
-			use_linear_attention=cfg["models"][f"model{num}"]["cnn"]["use_linear_attention"],
-			use_nonlinear_attention=cfg["models"][f"model{num}"]["cnn"]["use_nonlinear_attention"]
+			use_linear_attention=cfg["models"][f"model{num}"]["cnn"].get("use_linear_attention", False),
+			use_nonlinear_attention=cfg["models"][f"model{num}"]["cnn"].get("use_nonlinear_attention", False)
 		)
 	elif model_type == "cnn_mlp":
 		model = CNN_MLP(
