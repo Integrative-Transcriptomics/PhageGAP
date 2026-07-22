@@ -5,8 +5,9 @@ API endpoint definitions.
 from __future__ import annotations
 
 import logging
+import hmac
 
-from flask import Blueprint, current_app, request
+from flask import Blueprint, current_app, request, jsonify
 
 from phagegapclassifier.data import parse_sequence_data, prepare_for_pca
 from phagegapclassifier.embed import preprocess_df, compute_embeddings
@@ -19,13 +20,34 @@ api_blueprint = Blueprint("api", __name__)
 
 
 def get_resources() -> dict:
-	"""Return the process-local PhageGap models and configuration."""
+	"""Return the process-local PhageGap extensions, i.e., models and configurations."""
 	try:
-		return current_app.extensions["phagegap_models"]
+		return current_app.extensions["phagegap"]
 	except KeyError as exc:
 		raise RuntimeError(
-			"PhageGap resources were not initialized."
+			"PhageGap extension was not initialized."
 		) from exc
+
+
+@api_blueprint.before_request
+def require_api_token():
+	authorization = request.headers.get("Authorization", "")
+	scheme, separator, supplied_token = authorization.partition(" ")
+
+	valid = (
+		separator
+		and scheme.lower() == "bearer"
+		and supplied_token
+		and hmac.compare_digest(supplied_token, current_app.extensions["phagegap"]["api_token"])
+	)
+
+	if not valid:
+		response = jsonify({"error": "Unauthorized"})
+		response.status_code = 401
+		response.headers["WWW-Authenticate"] = "Bearer"
+		return response
+
+	return None
 
 
 @api_blueprint.get("/health")

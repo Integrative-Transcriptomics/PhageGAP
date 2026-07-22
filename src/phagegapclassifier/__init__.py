@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import tomllib
 from typing import Any
+from pathlib import Path
 
 import joblib
 import torch
@@ -57,29 +58,40 @@ def create_app() -> Flask:
 	set_determinism(setup_config.get("seed", 0))
 	device = select_device(config)
 
-	# TODO: Why is the checkpoint the PLM model name?
-	checkpoint = embed_config.get("model_type")
-	logger.info("Loading embedding model %s on %s.", checkpoint, device)
+	embed_model_type = embed_config.get("model_type")
+	logger.info("Loading embedding model %s on %s.", embed_model_type, device)
+	plm, tokenizer = monitor_load_embed_model(embed_model_type, device)
 
-	plm, tokenizer = monitor_load_embed_model(checkpoint, device)
+	predict_model_path = predict_config.get("model_path")
+	predict_model_type = predict_config.get("model_type")
+	predict_model_number = extract_model_number(predict_model_path)
 
-	model_path = predict_config.get("model_path")
-	model_type = predict_config.get("model_type")
-	# TODO: What exactly is the model number and why is it stored in the file?
-	model_number = extract_model_number(model_path)
-
-	logger.info("Loading classifier %s on %s.", model_type, device)
-
+	logger.info("Loading classifier %s on %s.", predict_model_type, device)
 	classifier, label_map, _ = monitor_load_predict_model(
-		model_path,
-		model_number,
-		model_type,
+		predict_model_path,
+		predict_model_number,
+		predict_model_type,
 	)
 
 	logger.info("Loading PCA and t-SNE objects.")
-
 	pca = joblib.load(manifold_config.get("pca_path"))
 	tsne = joblib.load(manifold_config.get("tsne_path"))
+
+	logger.info("Loading API token.")
+	try:
+		token_path = Path(app_config.get("api_token_path", None))
+	except TypeError as exc:
+		raise RuntimeError(
+			"API token path is not specified in the configuration."
+		) from exc
+	try:
+		api_token = token_path.read_text(encoding="utf-8").strip()
+	except OSError as exc:
+		raise RuntimeError(
+			f"Could not read API token from {token_path}."
+		) from exc
+	if len(api_token) < 32:
+		raise RuntimeError("API token must contain at least 32 characters.")
 
 	app = Flask(__name__)
 
@@ -99,16 +111,16 @@ def create_app() -> Flask:
 	)
 
 	# Store process-local runtime resources in the Flask application.
-	app.extensions["phagegap_models"] = {
+	app.extensions["phagegap"] = {
 		"config": config,
 		"device": device,
-		"checkpoint": checkpoint,
 		"plm": plm,
 		"tokenizer": tokenizer,
 		"classifier": classifier,
 		"label_map": label_map,
 		"pca": pca,
 		"tsne": tsne,
+		"api_token": api_token,
 	}
 
 	# Register API blueprint.

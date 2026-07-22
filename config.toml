@@ -9,6 +9,7 @@ max_form_parts = 1000
 host = "0.0.0.0"
 port = 5001
 debug = false
+api_token_path = "secrets/phagegap_api_token"
 
 [setup]
 seed = 42
