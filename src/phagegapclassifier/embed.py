@@ -155,7 +155,7 @@ def preprocess_df(df: pd.DataFrame, model_type: str) -> pd.DataFrame:
 	AssertionError 
 		If df does not contain a column "protein_seq"
 	"""
-	assert "protein_seq" in df.columns, "df does not contain column 'protein_seq'"
+	assert "protein_seq" in df.columns, "df does not contain column 'protein_seq'."
 
 	df["protein_seq"] = df["protein_seq"].str.upper()
 	df["processed_seq"] = df["protein_seq"].str.replace("[UZOB]", "X", regex=True)
