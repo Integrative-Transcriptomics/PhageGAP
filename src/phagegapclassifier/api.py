@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 api_blueprint = Blueprint("api", __name__)
 
 
-def get_resources() -> dict:
+def get_extension() -> dict:
 	"""Return the process-local PhageGap extensions, i.e., models and configurations."""
 	try:
 		return current_app.extensions["phagegap"]
@@ -57,39 +57,38 @@ def health_endpoint():
 
 @api_blueprint.post("/predict")
 def predict_endpoint():
-	return "Not implemented yet.", 501
 	try:
-		resources = get_resources()
+		extension = get_extension()
 
-		config = resources["config"]
-		checkpoint = resources["checkpoint"]
-		plm = resources["plm"]
-		tokenizer = resources["tokenizer"]
-		classifier = resources["classifier"]
-		label_map = resources["label_map"]
-		pca = resources["pca"]
-		tsne = resources["tsne"]
+		config = extension["config"]
+		plm = extension["plm"]
+		plm_model_type = config.get("embed", {}).get("model_type", None)
+		pool_layers = config.get("embed", {}).get("pool_layers", [])
+		pool_strategy = config.get("embed", {}).get("pool_strategy", "mean")
+		tokenizer = extension["tokenizer"]
+		classifier = extension["classifier"]
+		label_map = extension["label_map"]
+		pca = extension["pca"]
+		tsne = extension["tsne"]
 
 		# Parse and preprocess sequence data.
-		df = parse_sequence_data(request.get_data())
-		preprocessed_df = preprocess_df(df, checkpoint)
+		df = parse_sequence_data(request.get_data(as_text=True))
+		preprocessed_df = preprocess_df(df, plm_model_type)
 
 		# Compute PLM embeddings.
 		embed_dict = compute_embeddings(
-			checkpoint,
+			plm_model_type,
 			preprocessed_df,
 			plm,
 			tokenizer,
 			True,
 		)
 
-		embed_config = config.get("embed", {})
-
 		embed_dict_pooled = pool_embeddings(
 			embed_dict,
-			checkpoint,
-			layers=embed_config.get("pool_layers", []),
-			strategy=embed_config.get("pool_strategy", "mean"),
+			plm_model_type,
+			layers=pool_layers,
+			strategy=pool_strategy,
 		)
 
 		# Predict protein classes.
@@ -119,11 +118,9 @@ def predict_endpoint():
 		coords_new = pca_model.transform(X_new)
 		tsne_coords_new = tsne_embedding.transform(coords_new)
 
-		# Replace or extend this response as needed.
 		return {
 			"predictions": predictions_df.to_dict(orient="records"),
 			"ids": list(ids_new),
-			"pca_coordinates": coords_new.tolist(),
 			"tsne_coordinates": tsne_coords_new.tolist(),
 		}, 200
 
