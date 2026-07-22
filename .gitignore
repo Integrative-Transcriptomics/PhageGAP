@@ -219,8 +219,8 @@ __marimo__/
 
 # Custom
 images/*
-manifold/*
 models/*
+secrets/*
 .notes
 .vscode
 .local
