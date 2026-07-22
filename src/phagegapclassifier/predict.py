@@ -14,16 +14,28 @@ from phagegapclassifier.model import CNN, CNN_MLP
 logger = logging.getLogger(__name__)
 
 
-def load_model(path: str, num: int, model_type: str):
+def load_model(path: str, num: int, model_type: str) -> tuple[CNN | CNN_MLP, dict, dict]:
 	"""
 	Loads the saved weights, sets the model to evaluation mode, and returns model metadata.
 
+	Parameters
+	----------
+	path (str):
+		Path to the saved model pickle file.
+	num (int):
+		Model number to load (e.g., 1, 2, etc.).
+	model_type (str):
+		Type of model to load (`cnn` or `cnn_mlp`).
+
 	Returns
 	-------
-	model (torch.nn.Module): The loaded PyTorch model with weights restored.
-	label_map (dict):	   Mapping from predicted class indices to human-readable labels. If the checkpoint
-							stores labels as {label: index}, this mapping is inverted to {index: label}.
-	cfg (dict):			 The configuration dictionary used to initialize the model, taken from the checkpoint.
+	model (torch.nn.Module):
+		The loaded PyTorch model with weights restored.
+	label_map (dict):
+		Mapping from predicted class indices to human-readable labels. If the checkpoint
+		stores labels as {label: index}, this mapping is inverted to {index: label}.
+	cfg (dict):
+		The configuration dictionary used to initialize the model, taken from the checkpoint.
 	"""
 	# TODO: Why is map_location="cpu" fixed? Shouldn't it be device agnostic?
 	checkpoint = torch.load(path, map_location="cpu", weights_only=False)
@@ -74,10 +86,28 @@ def load_model(path: str, num: int, model_type: str):
 	return model, label_map, cfg
 
 
-def monitor_load_predict_model(path: str, num: int, model_type: str):
+def monitor_load_predict_model(path: str, num: int, model_type: str) -> tuple[CNN | CNN_MLP, dict, dict]:
 	"""
-	Monitor wrapper for `phagegapclassifier.predict.load_model()` to log time and memory usage during model loading.
+	Wrapper for `phagegapclassifier.predict.load_model()` to log time and memory usage during model loading.
 
+	Parameters
+	----------
+	path (str):
+		Path to the saved model pickle file.
+	num (int):
+		Model number to load (e.g., 1, 2, etc.).
+	model_type (str):
+		Type of model to load (`cnn` or `cnn_mlp`).
+
+	Returns
+	-------
+	model (torch.nn.Module):
+		The loaded PyTorch model with weights restored.
+	label_map (dict):
+		Mapping from predicted class indices to human-readable labels. If the checkpoint
+		stores labels as {label: index}, this mapping is inverted to {index: label}.
+	cfg (dict):
+		The configuration dictionary used to initialize the model, taken from the checkpoint.
 	"""
 	process = psutil.Process(os.getpid())
 
@@ -101,14 +131,19 @@ def predict(embeddings: Dict[str, np.ndarray], metadata_df: pd.DataFrame, predic
 
 	Parameters
 	----------
-	embeddings (Dict[str, np.ndarray]): Dictionary of protein sequence embeddings {protein_ID: embedding}.
-	metadata_df (pd.DataFrame): DataFrame with metadata
-	predict_model (CNN | CNN_MLP): Instance of CNN or CNN_MLP to use for class predictions.
-	label_map (Dict[int, str]): The label map of the specified classifier.
+	embeddings (Dict[str, np.ndarray]):
+		Dictionary of protein sequence embeddings {protein_ID: embedding}.
+	metadata_df (pd.DataFrame):
+		DataFrame with metadata.
+	predict_model (CNN | CNN_MLP):
+		Instance of CNN or CNN_MLP to use for class predictions.
+	label_map (Dict[int, str]):
+		The label map of the specified classifier.
 
 	Returns
 	-----------
-	results (pd.DataFrame): DataFrame containing predictions and probabilities.
+	results (pd.DataFrame):
+		DataFrame containing predictions and probabilities.
 	"""
 	assert type(predict_model) in (CNN, CNN_MLP)
 
