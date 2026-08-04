@@ -125,7 +125,7 @@ def monitor_load_predict_model(path: str, num: int, model_type: str) -> tuple[CN
 	return model, label_map, cfg
 
 
-def predict(embeddings: Dict[str, np.ndarray], metadata_df: pd.DataFrame, predict_model: CNN | CNN_MLP, label_map: Dict[int, str]) -> pd.DataFrame:
+def run_prediction(embeddings: Dict[str, np.ndarray], metadata_df: pd.DataFrame, predict_model: CNN | CNN_MLP, label_map: Dict[int, str]) -> pd.DataFrame:
 	"""
 	Predict classes for protein embeddings using the selected classifier model.
 
