@@ -7,12 +7,13 @@ from __future__ import annotations
 import logging
 import hmac
 
-from flask import Blueprint, current_app, request, jsonify
+import pandas as pd
 
+from flask import Blueprint, current_app, request, jsonify
 from phagegapclassifier.data import parse_sequence_data, prepare_for_pca
 from phagegapclassifier.embed import preprocess_df, compute_embeddings
 from phagegapclassifier.pool import pool_embeddings
-from phagegapclassifier.predict import predict as run_prediction
+from phagegapclassifier.predict import run_prediction
 
 
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ def require_api_token():
 
 @api_blueprint.get("/health")
 def health_endpoint():
-	return "PhageGap Classifier is active.", 200
+	return "PhageGap classifier is active.", 200
 
 
 @api_blueprint.post("/predict")
@@ -69,10 +70,16 @@ def predict_endpoint():
 		classifier = extension["classifier"]
 		label_map = extension["label_map"]
 		pca = extension["pca"]
+		pca_kdtree = extension["pca_kdtree"]
 		tsne = extension["tsne"]
 
 		# Parse and preprocess sequence data.
-		df = parse_sequence_data(request.get_data(as_text=True))
+		sequence_text = request.get_data(as_text=True)
+		df = parse_sequence_data(sequence_text)
+		if df.empty:
+			return {
+				"error": "Request contains no valid FASTA records."
+			}, 400
 		preprocessed_df = preprocess_df(df, plm_model_type)
 
 		# Compute PLM embeddings.
@@ -105,24 +112,26 @@ def predict_endpoint():
 			errors="ignore",
 		)
 
-		# Retrieve precomputed manifold data.
-		pca_model = pca["model"]
-		pca_coords = pca["coords"]
-		pca_ids = pca["ids"]
+		# Project the new samples and construct a DataFrame.
+		embed_matrix, embed_protein_ids = prepare_for_pca(embed_dict_pooled)
+		embed_pcs = pca["model"].transform(embed_matrix)
 
-		tsne_embedding = tsne["coords"]
-		tsne_ids = tsne["ids"]
+		# Search for nearest neighbor (nn) (k=1) in the PCA space.
+		nn_pc_distances, nn_indices = pca_kdtree.query(embed_pcs) # k=1 and p=2 are defaults.
+		nn_pc_distances = nn_pc_distances.tolist()
+		nn_indices = nn_indices.tolist()
 
-		# Project the new samples.
-		X_new, ids_new = prepare_for_pca(embed_dict_pooled)
-		coords_new = pca_model.transform(X_new)
-		tsne_coords_new = tsne_embedding.transform(coords_new)
+		embed_tsne_coords = tsne["coords"].transform(embed_pcs).tolist()
+		projection_df = pd.DataFrame({
+			"protein_ID": embed_protein_ids,
+			"tsne_coordinates": embed_tsne_coords,
+			"nearest_neighbor_ID": [ pca["ids"][i] for i in nn_indices ],
+			"nearest_neighbor_distance": nn_pc_distances,
+		})
 
-		return {
-			"predictions": predictions_df.to_dict(orient="records"),
-			"ids": list(ids_new),
-			"tsne_coordinates": tsne_coords_new.tolist(),
-		}, 200
+		# Merge predictions with projection data and return as JSON.
+		result = pd.merge(predictions_df, projection_df, on="protein_ID", how="left")
+		return result.to_dict(orient="records"), 200
 
 	except Exception:
 		logger.exception("Prediction request failed.")
