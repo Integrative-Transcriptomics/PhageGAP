@@ -14,7 +14,7 @@ from io import StringIO
 
 def parse_sequence_data(sequence_data: str) -> pd.DataFrame:
 	"""
-	Parses sequence data from a FASTA format string into a pandas data frame.
+	Parse FASTA-formatted protein sequences.
 
 	Parameters
 	----------
@@ -26,14 +26,25 @@ def parse_sequence_data(sequence_data: str) -> pd.DataFrame:
 	pd.DataFrame:
 		A data frame with columns `protein_ID`, `description`, and `protein_seq`.
 	"""
+	records = [
+		{
+			"protein_ID": str(record.id),
+			"description": str(record.description),
+			"protein_seq": str(record.seq),
+		}
+		for record in SeqIO.parse(
+			StringIO(sequence_data),
+			"fasta",
+		)
+	]
+
 	return pd.DataFrame.from_records(
-		[
-			{
-				"protein_ID": record.id,
-				"description": record.description,
-				"protein_seq": str(record.seq)
-			} for record in SeqIO.parse(StringIO(sequence_data), "fasta")
-		]
+		records,
+		columns=[
+			"protein_ID",
+			"description",
+			"protein_seq",
+		],
 	)
 
 
