@@ -7,9 +7,8 @@ from pathlib import Path
 
 import joblib
 import torch
-from dotenv import load_dotenv
 from flask import Flask
-
+from scipy.spatial import KDTree
 from phagegapclassifier.data import extract_model_number
 from phagegapclassifier.embed import monitor_load_embed_model
 from phagegapclassifier.predict import monitor_load_predict_model
@@ -22,9 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_config() -> dict[str, Any]:
-	"""Load configuration from config.toml and .env."""
-	load_dotenv()
-
+	"""Load configuration from config.toml."""
 	with open("config.toml", "rb") as file:
 		return tomllib.load(file)
 
@@ -76,6 +73,7 @@ def create_app() -> Flask:
 	logger.info("Loading PCA and t-SNE objects.")
 	pca = joblib.load(manifold_config.get("pca_path"))
 	tsne = joblib.load(manifold_config.get("tsne_path"))
+	pca_kdtree = KDTree(pca["coords"])
 
 	logger.info("Loading API token.")
 	try:
@@ -119,6 +117,7 @@ def create_app() -> Flask:
 		"classifier": classifier,
 		"label_map": label_map,
 		"pca": pca,
+		"pca_kdtree": pca_kdtree,
 		"tsne": tsne,
 		"api_token": api_token,
 	}
