@@ -13,7 +13,7 @@ api_token_path = "secrets/phagegap_api_token"
 
 [setup]
 seed = 42
-device = "cpu"
+device = "cuda"
 
 [embed]
 model_type = "prot_t5"
