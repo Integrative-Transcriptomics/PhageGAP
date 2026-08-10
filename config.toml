@@ -10,6 +10,7 @@ host = "0.0.0.0"
 port = 5001
 debug = false
 api_token_path = "secrets/phagegap_api_token"
+structure_info_path = "phagegap_structures.tsv"
 
 [setup]
 seed = 42

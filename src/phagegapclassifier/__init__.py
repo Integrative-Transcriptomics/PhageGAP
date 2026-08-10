@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import logging
 import tomllib
-from typing import Any
-from pathlib import Path
-
 import joblib
 import torch
+import pandas as pd
+from typing import Any
+from pathlib import Path
 from flask import Flask
 from scipy.spatial import KDTree
 from phagegapclassifier.data import extract_model_number
@@ -73,7 +73,10 @@ def create_app() -> Flask:
 	logger.info("Loading PCA and t-SNE objects.")
 	pca = joblib.load(manifold_config.get("pca_path"))
 	tsne = joblib.load(manifold_config.get("tsne_path"))
-	pca_kdtree = KDTree(pca["coords"])
+	kdtree = KDTree(pca["coords"])
+
+	logger.info("Loading structure database.")
+	structure_info_df = pd.read_csv(app_config.get("structure_info_path", None), delimiter="\t", index_col="protein_ID")
 
 	logger.info("Loading API token.")
 	try:
@@ -117,9 +120,10 @@ def create_app() -> Flask:
 		"classifier": classifier,
 		"label_map": label_map,
 		"pca": pca,
-		"pca_kdtree": pca_kdtree,
+		"kdtree": kdtree,
 		"tsne": tsne,
 		"api_token": api_token,
+		"structure_info": structure_info_df,
 	}
 
 	# Register API blueprint.
