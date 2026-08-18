@@ -9,6 +9,7 @@ import hmac
 import math
 import pandas as pd
 import numpy as np
+from scipy.special import softmax
 from flask import Blueprint, current_app, request, jsonify
 from phagegapclassifier.data import parse_sequence_data, prepare_for_pca
 from phagegapclassifier.embed import preprocess_df, compute_embeddings
@@ -147,26 +148,29 @@ def predict(sequence_text: str) -> pd.DataFrame:
 	# Project the embedded proteins into PCA space and search nearest neighbors.
 	embed_matrix, embed_protein_ids = prepare_for_pca(embed_dict_pooled)
 	embed_pcs = pca["model"].transform(embed_matrix)
-	nn_distances, nn_indices = kdtree.query(embed_pcs, k=5)
-	nn_distances = nn_distances.tolist() # (m, 3) 2D list.
-	nn_indices = nn_indices.tolist() # (m, 3) 2D list.
+	nn_pca_distances, nn_indices = kdtree.query(embed_pcs, k=5)
+	nn_pca_distances = nn_pca_distances.tolist() # (m, 5) 2D list.
+	nn_indices = nn_indices.tolist() # (m, 5) 2D list.
 	
 	# Compute weighted t-SNE coordinates based on the distances to the nearest neighbors.
 	embed_tsne_coords = [ ] # (m, 2) 2D list.
 	nn_tsne_distances = [ ] # Stores the distances of the nearest neighbors in t-SNE space.
-	for indices_list, distances_list in zip(nn_indices, nn_distances):
-		neighbor_coords = [ tsne["coords"][i] for i in indices_list ]
-		if (distances_list[0] == 0):
-			# If the nearest neighbor distance is zero, use its t-SNE coordinates directly.
-			weighted_coords = neighbor_coords[0]
-			nn_tsne_distance = 0.0
-		else:
-			# Compute weighted coordinates based on the distances to the nearest neighbors.
-			weighted_coords = weighted_coordinates(neighbor_coords, distances_list)
-			nn_tsne_distance = round(math.dist(weighted_coords, neighbor_coords[0]), 3)
+	for indices_list, pca_distances_list in zip(nn_indices, nn_pca_distances):
+		# Extract the t-SNE coordinates of the nearest neighbors.
+		neighbor_tsne_coords = [ tsne["coords"][i] for i in indices_list ]
+
+		# Compute weighted coordinates based on the distances to the nearest neighbors.
+		weighted_coords = weighted_coordinates(neighbor_tsne_coords, pca_distances_list)
+
+		# Recompute the distance in t-SNE space between the weighted coordinates and the nearest neighbor's t-SNE coordinates.
+		nn_tsne_distance = round(math.dist(weighted_coords, neighbor_tsne_coords[0]), 3)
+
+		# Append the computed values to the respective lists.
 		nn_tsne_distances.append(nn_tsne_distance)
 		embed_tsne_coords.append(weighted_coords)
-	embed_tsne_coords = np.array(embed_tsne_coords).T # Transpose to shape (2, m) for DataFrame construction.
+
+	# Transpose to shape (2, m) for DataFrame construction.
+	embed_tsne_coords = np.array(embed_tsne_coords).T
 	
 	projection_df = pd.DataFrame({
 		"protein_ID": embed_protein_ids,
@@ -183,23 +187,25 @@ def predict(sequence_text: str) -> pd.DataFrame:
 
 def weighted_coordinates(coordinates: list[list[float]], distances: list[float]) -> list[float]:
 	"""Compute a weighted average of coordinates based on distances."""
-	if len(coordinates) != len(distances):
-		raise ValueError("Coordinates and distances must have the same length.")
-	if not coordinates:
-		return []
 
-	# If the nearest distance is zero, return the corresponding coordinate directly.
+	# If no coordinates are provided, raise an error.
+	if len(coordinates) == 0:
+		raise ValueError("No coordinates provided for weighted averaging.")
+	# If coordinates and distances lengths do not match, raise an error.
+	if len(coordinates) != len(distances):
+		raise ValueError("The number of coordinates must match the number of distances.")
+
+	# If the nearest neighbor (first in list) distance is zero, return the corresponding coordinates directly.
 	if distances[0] == 0:
 		return coordinates[0]
 
-	# Convert distances to weights (inverse of distance).
-	weights = [1 / d if d != 0 else 0 for d in distances]
-	total_weight = sum(weights)
-	# TODO: Total weight should not be zero, but maybe add a check to avoid division by zero.
+	# Convert distances to weights using softmax.
+	distances = np.array(distances)
+	tau = .5  # Temperature parameter for softmax; can be adjusted based on desired sensitivity.
+	weights = softmax(-distances / tau)  # Invert distances for softmax.
 
-	# Compute weighted average.
-	weighted_coords = [
-		round( sum(coord[i] * weights[i] for i in range(len(weights))) / total_weight, 3 )
-		for coord in zip(*coordinates)
+	# Compute weighted average of nearest neighbor coordinates.
+	return [
+		round( sum(coords[i] * weights[i] for i in range(len(coordinates))), 3 )
+		for coords in zip(*coordinates)
 	]
-	return weighted_coords
