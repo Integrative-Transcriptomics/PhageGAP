@@ -3,13 +3,12 @@ From: python:3.12-slim
 
 %labels
     Author "Simon Hackl"
-    Version 1.0.0-alpha
-    Description "PhageGap Classifier"
+    Version 1.0.0
+    Description "PhageGAP Classifier Image"
 
 %files
     src/phagegapclassifier/__init__.py /app/phagegapclassifier/__init__.py
     src/phagegapclassifier/api.py /app/phagegapclassifier/api.py
-    src/phagegapclassifier/data.py /app/phagegapclassifier/data.py
     src/phagegapclassifier/embed.py /app/phagegapclassifier/embed.py
     src/phagegapclassifier/model.py /app/phagegapclassifier/model.py
     src/phagegapclassifier/pool.py /app/phagegapclassifier/pool.py
@@ -26,7 +25,6 @@ From: python:3.12-slim
     export PHAGEGAP_BIND_ADDRESS=0.0.0.0
     export PHAGEGAP_PORT=20101
     export PYTHONUNBUFFERED=1
-    export CUDA_VISIBLE_DEVICES=0,1
 
 %startscript
     cd /app
@@ -42,9 +40,6 @@ From: python:3.12-slim
     )
 
     export CUDA_VISIBLE_DEVICES="$SELECTED_GPU"
-
-    echo "Selected physical GPU ${SELECTED_GPU}"
-    echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}"
 
     exec gunicorn \
         --bind "${PHAGEGAP_BIND_ADDRESS}:${PHAGEGAP_PORT}" \

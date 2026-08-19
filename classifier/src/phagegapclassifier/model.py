@@ -1,81 +1,47 @@
 """
-Model definitions for protein category classification.
+Function class prediction model implementations of `phagegapclassifier`.
 
-TODO: Remove unused models for release.
+Currently, only :class:`phagegapclassifier.model.CNN` and :class:`phagegapclassifier.model.CNN_MLP` are supported.
+
+Model loading and prediction routines are provided with :func:`phagegapclassifier.predict.load_predict_model`
+and :func:`phagegapclassifier.predict.run_prediction`.
 """
 
 from __future__ import annotations
 
-import math, optuna, torch
-from torch import nn
+import math
+import optuna
+import torch
 import torch.nn.functional as F
+from torch import nn
 from typing import List
-
-
-class MLP(nn.Module):
-	"""Small MLP for protein category classification
-
-	Parameters
-	----------
-	in_dim (int): Input dimension, must match pLM embedding dimension
-	num_dimensions (int): Number of hidden dimensions
-	num_neurons (List[int]): Number of neurons of hidden dimensions.
-	dropout (float): Dropout probability applied after each ReLU (0 -> disabled)
-	num_classes (int): Number of target classes
-	"""
-	def __init__(
-		self,
-		trial: optuna.trial._trial.Trial,
-		in_dim: int,
-		num_dimensions: int,
-		num_neurons: List[int],
-		dropout: float,
-		num_classes: int
-	) -> None:
-		super().__init__()
-
-		assert in_dim in (1024, 960, 1280, 1536, 800, 1280), "in_dim must match embedding dimension"
-		assert num_classes >= 2, "Need at least two classes"
-		assert 0.0 <= dropout <= 1.0, "dropout outside [0,1]"
-		assert len(num_neurons) > 0, "Provide at least one hidden dimension"
-		assert len(num_neurons) == num_dimensions, "Number of dimensions and length of nun_neurons list must match"
-
-		self.layers: List[nn.Module] = []
-
-		prev_channel = in_dim
-		for i in range(num_dimensions):
-			self.layers.extend([
-				nn.Linear(prev_channel, num_neurons[i]),
-				nn.BatchNorm1d(num_neurons[i]),
-				nn.ReLU(),
-				nn.Dropout(dropout)
-			])
-			prev_channel = num_neurons[i]
-
-		self.layers.append(nn.Linear(prev_channel, num_classes))
-		self.net = nn.Sequential(*self.layers)
-
-
-	def forward(self, x, features: torch.Tensor | None = None):
-		x = F.normalize(x, dim=1)
-		return self.net(x)
+from deprecated import deprecated
 
 
 class CNN(nn.Module):
-	"""Improved CNN with dilations for protein category classification
+	"""Improved CNN with dilations for protein category classification.
 
 	Parameters
-	----------
-	in_channels (int): Number of input channels
-	num_conv_layers (int): Number of convolutional layers
-	num_filters (List[int]): Number of filters of convolutional layers
-	num_neurons (int): Number of neurons of FC layers
-	kernel_sizes (List[int]): Kernel sizes for conv layers
-	dropout (float): Dropout probability applied after each ReLU (0 -> disabled)
-	num_classes (int): Number of target classes
-	dilations (List[int]): Dilation factors for each convolutional block
-	use_dilation (bool):	If True, apply defined dilations
-							If False, all convolutions have dilation = 1
+	__________
+	in_channels (int):
+		Number of input channels.
+	num_conv_layers (int):
+		Number of convolutional layers.
+	num_filters (List[int]):
+		Number of filters of convolutional layers.
+	num_neurons (int):
+		Number of neurons of FC layers.
+	kernel_sizes (List[int]):
+		Kernel sizes for conv layers.
+	dropout (float):
+		Dropout probability applied after each ReLU (0 -> disabled).
+	num_classes (int):
+		Number of target classes.
+	dilations (List[int]):
+		Dilation factors for each convolutional block.
+	use_dilation (bool):
+		If True, apply defined dilations.
+		If False, all convolutions have dilation = 1.
 	"""
 
 	def __init__(
@@ -159,9 +125,9 @@ class CNN(nn.Module):
 			pooled = self.pool(feats, mask) # (B, C)
 		else:
 			# masked global average pool
-			pooled = masked_mean(feats, mask) # (B, C)
+			pooled = _masked_mean(feats, mask) # (B, C)
 			if self.mean_max:
-				max_pooled = masked_max(feats, mask)
+				max_pooled = _masked_max(feats, mask)
 				pooled = torch.cat([pooled, max_pooled], dim=1)
 
 		if features is not None:
@@ -179,123 +145,36 @@ class CNN(nn.Module):
 			return logits
 	
 
-class CNN_Flattened(nn.Module):
-	"""CNN with dilations flattened for protein category classification
-
-	Parameters
-	----------
-	in_channels (int): Number of input channels
-	num_conv_layers (int): Number of convolutional layers
-	num_filters (List[int]): Number of filters of convolutional layers
-	num_neurons (int): Number of neurons of FC layers
-	kernel_sizes (List[int]): Kernel sizes for conv layers
-	dropout (float): Dropout probability applied after each ReLU (0 -> disabled)
-	num_classes (int): Number of target classes
-	dilations (List[int]): Dilation factors for each convolutional block
-	use_dilation (bool):	If True, apply defined dilations
-							If False, all convolutions have dilation = 1
-	"""
-
-	def __init__(
-		self,
-		trial: optuna.trial._trial.Trial,
-		in_channels: int,
-		num_conv_layers: int,
-		num_filters: List[int],
-		kernel_sizes: List[int],
-		dropout: float,
-		num_classes: int,
-		dilations: List[int],
-		use_dilation: bool,
-		mean_max: bool,
-		n_feats: int,
-	) -> None:
-		super().__init__()
-		assert in_channels in (1024, 960, 1280, 1536, 640, 2560, 1152), "in_channels must match embedding dimension"
-		assert num_classes >= 2, "Need at least two classes"
-		assert all(k % 2 == 1 for k in kernel_sizes), "all kernel_sizes should be odd for symmetric padding" # to keep sequence length stable
-		assert 0.0 <= dropout <= 1.0, "dropout outside [0,1]"
-		assert len(num_filters) > 0, "Provide at least one conv layer"
-		assert len(num_filters) == len(kernel_sizes) == len(dilations), "conv_channels, kernel_sizes, and dilations lists must have same length"
-
-		self.mean_max = mean_max
-		self.blocks = nn.ModuleList()
-
-		prev_channels = in_channels
-
-		for i in range(num_conv_layers):
-			d = dilations[i] if use_dilation else 1
-			padding = (kernel_sizes[i] // 2) * d
-			block = nn.Sequential(
-				nn.Conv1d(
-					in_channels = prev_channels,
-					out_channels = num_filters[i],
-					kernel_size = kernel_sizes[i],
-					padding = padding,
-					dilation = d
-				),
-				nn.BatchNorm1d(num_filters[i]),
-				nn.ReLU(),
-				nn.Dropout(dropout) if dropout > 0 else nn.Identity()
-			)
-			self.blocks.append(block)
-			prev_channels = num_filters[i]
-
-		# after pooling, map final feature vector to class logits
-		if mean_max:
-			self.classifier = nn.Linear(2 * sum(num_filters)+n_feats, num_classes)
-		else:
-			self.classifier = nn.Linear(sum(num_filters)+n_feats, num_classes)
-
-	def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None, features: torch.Tensor | None = None) -> torch.Tensor:  # noqa: D401
-		"""
-		x: (B, L, D)
-		mask: (B, L) with 1=real, 0=padding
-		feats: (B, n_feats)
-		"""
-		assert x.ndim == 3, "Expected input shape (batch, seq_len, embed_dim)"
-		x = x.permute(0, 2, 1) # from x = (B, L, D) to x = (B, D, L)
-
-		pooled_outputs = []
-
-		for block in self.blocks:
-			x = block(x) # (B, C, L)
-
-			# masked global average pool
-			pooled = masked_mean(x, mask) # (B, C)
-			if self.mean_max:
-				max_pooled = masked_max(x, mask)
-				pooled = torch.cat([pooled, max_pooled], dim=1)
-
-			pooled_outputs.append(pooled)
-
-		flattened = torch.cat(pooled_outputs, dim=1) # (B, sum(num_filters))
-
-		if features is not None:
-			combined = torch.cat([flattened, features], dim=1)  # (B, C + n_feats)
-			return self.classifier(combined) # (B, num_classes)
-		else:
-			return self.classifier(flattened) # (B, num_classes)
-
-
 class CNN_MLP(nn.Module):
-	"""CNN with dilations for protein category classification, subsequent MLP as classification head
+	"""CNN with dilations for protein category classification, subsequent MLP as classification head.
 
 	Parameters
-	----------
-	in_channels (int): Number of input channels
-	num_conv_layers (int): Number of convolutional layers
-	num_filters (List[int]): Number of filters of convolutional layers
-	num_neurons (int): Number of neurons of FC layers
-	kernel_sizes (List[int]): Kernel sizes for conv layers
-	dropout_conv (float): Dropout probability applied after each ReLU (0 -> disabled)
-	num_classes (int): Number of target classes
-	dilations (List[int]): Dilation factors for each convolutional block
-	use_dilation (bool):	If True, apply defined dilations
-							If False, all convolutions have dilation = 1
-	num_dimensions (int): Number of hidden dimensions
-	num_neurons (List[int]): Number of neurons of hidden dimensions.
-	dropout_mlp (float): Dropout probability applied after each ReLU (0 -> disabled)
+	__________
+	in_channels (int):
+		Number of input channels.
+	num_conv_layers (int):
+		Number of convolutional layers.
+	num_filters (List[int]):
+		Number of filters of convolutional layers.
+	num_neurons (int):
+		Number of neurons of FC layers.
+	kernel_sizes (List[int]):
+		Kernel sizes for conv layers.
+	dropout_conv (float):
+		Dropout probability applied after each ReLU (0 -> disabled).
+	num_classes (int):
+		Number of target classes.
+	dilations (List[int]):
+		Dilation factors for each convolutional block.
+	use_dilation (bool):
+		If True, apply defined dilations.
+		If False, all convolutions have dilation = 1.
+	num_dimensions (int):
+		Number of hidden dimensions.
+	num_neurons (List[int]):
+		Number of neurons of hidden dimensions.
+	dropout_mlp (float):
+		Dropout probability applied after each ReLU (0 -> disabled).
 	"""
 
 	def __init__(
@@ -388,14 +267,17 @@ class CNN_MLP(nn.Module):
 			pooled = self.pool(feats, mask) # (B, C)
 		else:
 			# masked global average pool
-			pooled = masked_mean(feats, mask) # (B, C)
+			pooled = _masked_mean(feats, mask) # (B, C)
 
 		pooled = F.normalize(pooled, dim=1)
 		return self.classifier(pooled) # (B, num_classes)
 
 
-def masked_mean(feats, mask): # feats (B, C, L), mask (B, L)
-	"""mean-pools over sequence length, ignoring padded positions"""
+def _masked_mean(feats, mask):
+	"""Mean-pools over sequence length, ignoring padded positions.
+	
+	Feats (B, C, L), mask (B, L).
+	"""
 	mask = mask.unsqueeze(1) # (B, 1, L)
 	# multiply features by mask -> ignore padded positions
 	feats = feats * mask
@@ -404,8 +286,11 @@ def masked_mean(feats, mask): # feats (B, C, L), mask (B, L)
 	return pooled
 
 
-def masked_max(feats, mask): # feats (B, C, L), mask (B, L)
-	"""max-pools over sequence length, ignoring padded positions"""
+def _masked_max(feats, mask):
+	"""Max-pools over sequence length, ignoring padded positions.
+	
+	Feats (B, C, L), mask (B, L).
+	"""
 	mask = mask.unsqueeze(1) # (B, 1, L)
 	# set masked positions to -inf -> ignore padded positions
 	feats = feats.masked_fill(mask == 0, float("-inf"))
@@ -472,22 +357,203 @@ class NonlinearAttentionPooling(nn.Module):
 		return pooled
 
 
-class CNNTransformer(nn.Module):
-	"""CNN + Transformer for protein category classification
+@deprecated(version='1.0.0', reason="CNN_Flattened is deprecated. Please use CNN or CNN_MLP.")
+class CNN_Flattened(nn.Module):
+	"""CNN with dilations flattened for protein category classification.
+
+	`@deprecated(version='1.0.0', reason="CNN_Flattened is deprecated. Please use CNN or CNN_MLP.")`
 
 	Parameters
-	----------
-	in_channels (int): Number of input channels
-	conv_channels (List[int]): Output channels for each Conv1d block. Length defines depth
-	kernel_sizes (List[int]): Kernel sizes for each conv layer (must all be odd)
-	dropout (float): Dropout probability applied after each ReLU (0 -> disabled)
-	num_classes (int): Number of target classes
-	dilations (List[int]): Dilation factors for each convolutional block
-	use_dilation (bool):	If True, apply defined dilations (preferentially exponentially increasing (1, 2, 4, ...))
-							If False, all convolutions have dilation = 1
-	num_heads (int): Number of attention heads in Transformer
-	num_transformer_layers (int): Number of Transformer encoder layers
-	num_hidden_layers (int): Number of hidden layers
+	__________
+	in_channels (int):
+		Number of input channels.
+	num_conv_layers (int):
+		Number of convolutional layers.
+	num_filters (List[int]):
+		Number of filters of convolutional layers.
+	num_neurons (int):
+		Number of neurons of FC layers.
+	kernel_sizes (List[int]):
+		Kernel sizes for conv layers.
+	dropout (float):
+		Dropout probability applied after each ReLU (0 -> disabled).
+	num_classes (int):
+		Number of target classes.
+	dilations (List[int]):
+		Dilation factors for each convolutional block.
+	use_dilation (bool):
+		If True, apply defined dilations.
+		If False, all convolutions have dilation = 1.
+	"""
+
+	def __init__(
+		self,
+		trial: optuna.trial._trial.Trial,
+		in_channels: int,
+		num_conv_layers: int,
+		num_filters: List[int],
+		kernel_sizes: List[int],
+		dropout: float,
+		num_classes: int,
+		dilations: List[int],
+		use_dilation: bool,
+		mean_max: bool,
+		n_feats: int,
+	) -> None:
+		super().__init__()
+		assert in_channels in (1024, 960, 1280, 1536, 640, 2560, 1152), "in_channels must match embedding dimension"
+		assert num_classes >= 2, "Need at least two classes"
+		assert all(k % 2 == 1 for k in kernel_sizes), "all kernel_sizes should be odd for symmetric padding" # to keep sequence length stable
+		assert 0.0 <= dropout <= 1.0, "dropout outside [0,1]"
+		assert len(num_filters) > 0, "Provide at least one conv layer"
+		assert len(num_filters) == len(kernel_sizes) == len(dilations), "conv_channels, kernel_sizes, and dilations lists must have same length"
+
+		self.mean_max = mean_max
+		self.blocks = nn.ModuleList()
+
+		prev_channels = in_channels
+
+		for i in range(num_conv_layers):
+			d = dilations[i] if use_dilation else 1
+			padding = (kernel_sizes[i] // 2) * d
+			block = nn.Sequential(
+				nn.Conv1d(
+					in_channels = prev_channels,
+					out_channels = num_filters[i],
+					kernel_size = kernel_sizes[i],
+					padding = padding,
+					dilation = d
+				),
+				nn.BatchNorm1d(num_filters[i]),
+				nn.ReLU(),
+				nn.Dropout(dropout) if dropout > 0 else nn.Identity()
+			)
+			self.blocks.append(block)
+			prev_channels = num_filters[i]
+
+		# after pooling, map final feature vector to class logits
+		if mean_max:
+			self.classifier = nn.Linear(2 * sum(num_filters)+n_feats, num_classes)
+		else:
+			self.classifier = nn.Linear(sum(num_filters)+n_feats, num_classes)
+
+	def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None, features: torch.Tensor | None = None) -> torch.Tensor:  # noqa: D401
+		"""
+		x: (B, L, D)
+		mask: (B, L) with 1=real, 0=padding
+		feats: (B, n_feats)
+		"""
+		assert x.ndim == 3, "Expected input shape (batch, seq_len, embed_dim)"
+		x = x.permute(0, 2, 1) # from x = (B, L, D) to x = (B, D, L)
+
+		pooled_outputs = []
+
+		for block in self.blocks:
+			x = block(x) # (B, C, L)
+
+			# masked global average pool
+			pooled = _masked_mean(x, mask) # (B, C)
+			if self.mean_max:
+				max_pooled = _masked_max(x, mask)
+				pooled = torch.cat([pooled, max_pooled], dim=1)
+
+			pooled_outputs.append(pooled)
+
+		flattened = torch.cat(pooled_outputs, dim=1) # (B, sum(num_filters))
+
+		if features is not None:
+			combined = torch.cat([flattened, features], dim=1)  # (B, C + n_feats)
+			return self.classifier(combined) # (B, num_classes)
+		else:
+			return self.classifier(flattened) # (B, num_classes)
+
+
+@deprecated(version='1.0.0', reason="MLP is deprecated. Please use CNN or CNN_MLP.")
+class MLP(nn.Module):
+	"""Small MLP for protein category classification.
+
+	`@deprecated(version='1.0.0', reason="MLP is deprecated. Please use CNN or CNN_MLP.")`
+
+	Parameters
+	__________
+	in_dim (int):
+		Input dimension, must match pLM embedding dimension.
+	num_dimensions (int):
+		Number of hidden dimensions.
+	num_neurons (List[int]):
+		Number of neurons of hidden dimensions.
+	dropout (float):
+		Dropout probability applied after each ReLU (0 -> disabled).
+	num_classes (int):
+		Number of target classes.
+	"""
+	def __init__(
+		self,
+		trial: optuna.trial._trial.Trial,
+		in_dim: int,
+		num_dimensions: int,
+		num_neurons: List[int],
+		dropout: float,
+		num_classes: int
+	) -> None:
+		super().__init__()
+
+		assert in_dim in (1024, 960, 1280, 1536, 800, 1280), "in_dim must match embedding dimension"
+		assert num_classes >= 2, "Need at least two classes"
+		assert 0.0 <= dropout <= 1.0, "dropout outside [0,1]"
+		assert len(num_neurons) > 0, "Provide at least one hidden dimension"
+		assert len(num_neurons) == num_dimensions, "Number of dimensions and length of nun_neurons list must match"
+
+		self.layers: List[nn.Module] = []
+
+		prev_channel = in_dim
+		for i in range(num_dimensions):
+			self.layers.extend([
+				nn.Linear(prev_channel, num_neurons[i]),
+				nn.BatchNorm1d(num_neurons[i]),
+				nn.ReLU(),
+				nn.Dropout(dropout)
+			])
+			prev_channel = num_neurons[i]
+
+		self.layers.append(nn.Linear(prev_channel, num_classes))
+		self.net = nn.Sequential(*self.layers)
+
+
+	def forward(self, x, features: torch.Tensor | None = None):
+		x = F.normalize(x, dim=1)
+		return self.net(x)
+
+
+@deprecated(version='1.0.0', reason="CNNTransformer is deprecated. Please use CNN or CNN_MLP.")
+class CNNTransformer(nn.Module):
+	"""CNN + Transformer for protein category classification.
+
+	`@deprecated(version='1.0.0', reason="CNNTransformer is deprecated. Please use CNN or CNN_MLP.")`
+
+	Parameters
+	__________
+	in_channels (int):
+		Number of input channels.
+	conv_channels (List[int]):
+		Output channels for each Conv1d block. Length defines depth.
+	kernel_sizes (List[int]):
+		Kernel sizes for each conv layer (must all be odd).
+	dropout (float):
+		Dropout probability applied after each ReLU (0 -> disabled).
+	num_classes (int):
+		Number of target classes.
+	dilations (List[int]):
+		Dilation factors for each convolutional block.
+	use_dilation (bool):
+		If True, apply defined dilations (preferentially exponentially increasing (1, 2, 4, ...)).
+		If False, all convolutions have dilation = 1.
+	num_heads (int):
+		Number of attention heads in Transformer.
+	num_transformer_layers (int):
+		Number of Transformer encoder layers.
+	num_hidden_layers (int):
+		Number of hidden layers.
 	"""
 
 	def __init__(
@@ -593,27 +659,40 @@ class CNNTransformer(nn.Module):
 			pooled = self.pool(feats, mask) # (B, C)
 		else:
 			# masked global average pool
-			pooled = masked_mean(feats, mask) # (B, C)
+			pooled = _masked_mean(feats, mask) # (B, C)
 
 		return self.classifier(pooled) # (B, num_classes)
 
 
+@deprecated(version='1.0.0', reason="Transformer is deprecated. Please use CNN or CNN_MLP.")
 class Transformer(nn.Module):
-	"""Transformer for protein category classification
+	"""Transformer for protein category classification.
+
+	`@deprecated(version='1.0.0', reason="Transformer is deprecated. Please use CNN or CNN_MLP.")`
 
 	Parameters
-	----------
-	in_channels (int): Number of input channels
-	conv_channels (List[int]): Output channels for each Conv1d block. Length defines depth
-	kernel_sizes (List[int]): Kernel sizes for each conv layer (must all be odd)
-	dropout (float): Dropout probability applied after each ReLU (0 -> disabled)
-	num_classes (int): Number of target classes
-	dilations (List[int]): Dilation factors for each convolutional block
-	use_dilation (bool):	If True, apply defined dilations (preferentially exponentially increasing (1, 2, 4, ...))
-							If False, all convolutions have dilation = 1
-	num_heads (int): Number of attention heads in Transformer
-	num_transformer_layers (int): Number of Transformer encoder layers
-	num_hidden_layers (int): Number of hidden layers
+	__________
+	in_channels (int):
+		Number of input channels.
+	conv_channels (List[int]):
+		Output channels for each Conv1d block. Length defines depth.
+	kernel_sizes (List[int]):
+		Kernel sizes for each conv layer (must all be odd).
+	dropout (float):
+		Dropout probability applied after each ReLU (0 -> disabled).
+	num_classes (int):
+		Number of target classes.
+	dilations (List[int]):
+		Dilation factors for each convolutional block.
+	use_dilation (bool):
+		If True, apply defined dilations (preferentially exponentially increasing (1, 2, 4, ...)).
+		If False, all convolutions have dilation = 1.
+	num_heads (int):
+		Number of attention heads in Transformer.
+	num_transformer_layers (int):
+		Number of Transformer encoder layers.
+	num_hidden_layers (int):
+		Number of hidden layers.
 	"""
 
 	def __init__(
@@ -679,12 +758,17 @@ class Transformer(nn.Module):
 			pooled = self.pool(feats, mask) # (B, C)
 		else:
 			# masked global average pool
-			pooled = masked_mean(feats, mask) # (B, C)
+			pooled = _masked_mean(feats, mask) # (B, C)
 
 		return self.classifier(pooled) # (B, num_classes)
 
 
+@deprecated(version='1.0.0', reason="PositionalEncoding is deprecated. Please use CNN or CNN_MLP.")
 class PositionalEncoding(nn.Module):
+	"""N/A
+
+	`@deprecated(version='1.0.0', reason="PositionalEncoding is deprecated. Please use CNN or CNN_MLP.")`
+	"""
 
 	def __init__(self, 
 				 embed_dim: int, 
@@ -710,11 +794,13 @@ class PositionalEncoding(nn.Module):
 		return self.dropout(x)
 
 
+@deprecated(version='1.0.0', reason="ContextTransformer is deprecated. Please use CNN or CNN_MLP.")
 class ContextTransformer(nn.Module):
-	"""
-	based on a pytorch TransformerEncoder.
-	"""
+	"""Based on a pytorch TransformerEncoder.
 
+	`@deprecated(version='1.0.0', reason="ContextTransformer is deprecated. Please use CNN or CNN_MLP.")`
+	"""
+	
 	def __init__(
 			self,
 			num_heads: int,

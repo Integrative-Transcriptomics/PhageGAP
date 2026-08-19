@@ -1,25 +1,28 @@
 """
-Prediction utilities.
+Function class prediction utilities to load and apply `phagegapclassifier.model` within the `phagegapclassifier` package.
+
+Currently, only :class:`phagegapclassifier.model.CNN` and :class:`phagegapclassifier.model.CNN_MLP` are supported.
 """
 
 from __future__ import annotations
 
-import torch, logging, psutil, time, os
+import torch, logging
 import numpy as np
 import pandas as pd
 from typing import Dict
 from torch.nn.utils.rnn import pad_sequence
 from phagegapclassifier.model import CNN, CNN_MLP
 
+
+# Initialize logging configuration.
 logger = logging.getLogger(__name__)
 
 
-def load_model(path: str, num: int, model_type: str) -> tuple[CNN | CNN_MLP, dict, dict]:
-	"""
-	Loads the saved weights, sets the model to evaluation mode, and returns model metadata.
+def load_predict_model(path: str, num: int, model_type: str) -> tuple[CNN | CNN_MLP, dict, dict]:
+	"""Loads the saved weights, sets the model to evaluation mode, and returns model metadata.
 
 	Parameters
-	----------
+	__________
 	path (str):
 		Path to the saved model pickle file.
 	num (int):
@@ -28,7 +31,7 @@ def load_model(path: str, num: int, model_type: str) -> tuple[CNN | CNN_MLP, dic
 		Type of model to load (`cnn` or `cnn_mlp`).
 
 	Returns
-	-------
+	_______
 	model (torch.nn.Module):
 		The loaded PyTorch model with weights restored.
 	label_map (dict):
@@ -76,6 +79,8 @@ def load_model(path: str, num: int, model_type: str) -> tuple[CNN | CNN_MLP, dic
 			num_neurons=cfg["models"][f"model{num}"]["cnn_mlp"]["num_neurons"],
 			dropout_mlp=cfg["models"][f"model{num}"]["cnn_mlp"]["dropout_mlp"],
 		)
+	else:
+		raise ValueError(f"Unsupported model type: {model_type}. Supported types are 'cnn' and 'cnn_mlp'.")
 
 	model.load_state_dict(checkpoint["state_dict"])
 	model.eval()
@@ -86,51 +91,11 @@ def load_model(path: str, num: int, model_type: str) -> tuple[CNN | CNN_MLP, dic
 	return model, label_map, cfg
 
 
-def monitor_load_predict_model(path: str, num: int, model_type: str) -> tuple[CNN | CNN_MLP, dict, dict]:
-	"""
-	Wrapper for `phagegapclassifier.predict.load_model()` to log time and memory usage during model loading.
-
-	Parameters
-	----------
-	path (str):
-		Path to the saved model pickle file.
-	num (int):
-		Model number to load (e.g., 1, 2, etc.).
-	model_type (str):
-		Type of model to load (`cnn` or `cnn_mlp`).
-
-	Returns
-	-------
-	model (torch.nn.Module):
-		The loaded PyTorch model with weights restored.
-	label_map (dict):
-		Mapping from predicted class indices to human-readable labels. If the checkpoint
-		stores labels as {label: index}, this mapping is inverted to {index: label}.
-	cfg (dict):
-		The configuration dictionary used to initialize the model, taken from the checkpoint.
-	"""
-	process = psutil.Process(os.getpid())
-
-	mem_before = process.memory_info().rss / 1024**2
-	start = time.perf_counter()
-
-	model, label_map, cfg = load_model(path, num, model_type)
-
-	end = time.perf_counter()
-	mem_after = process.memory_info().rss / 1024**2
-
-	logger.info(f"Time: {end - start:.2f} s")
-	logger.info(f"RAM : {mem_after - mem_before:.2f} MB")
-
-	return model, label_map, cfg
-
-
 def run_prediction(embeddings: Dict[str, np.ndarray], metadata_df: pd.DataFrame, predict_model: CNN | CNN_MLP, label_map: Dict[int, str]) -> pd.DataFrame:
-	"""
-	Predict classes for protein embeddings using the selected classifier model.
+	"""Predict classes for protein embeddings using the selected classifier model.
 
 	Parameters
-	----------
+	__________
 	embeddings (Dict[str, np.ndarray]):
 		Dictionary of protein sequence embeddings {protein_ID: embedding}.
 	metadata_df (pd.DataFrame):
@@ -141,7 +106,7 @@ def run_prediction(embeddings: Dict[str, np.ndarray], metadata_df: pd.DataFrame,
 		The label map of the specified classifier.
 
 	Returns
-	-----------
+	_______
 	results (pd.DataFrame):
 		DataFrame containing predictions and probabilities.
 	"""

@@ -1,31 +1,38 @@
 """
-Protein sequence data and pLM model embedding utilities.
+pLM model implementations of the `phagegapclassifier` package.
 
-The `MODEL_CONFIGS` and `login_to_huggingface()` are adapted from
-	https://github.com/tsenoner/plm_choice/blob/main/src/data_preparation/embeddings/embedding_generation.py
+Currently only ProtT5 is supported. Other models are not yet implemented. If you want
+to re-add support for other models, please see the `embed.py` file in the `deprecated`
+folder of the `phagegap` code repository.
 """
 
 from __future__ import annotations
 
-import logging, sys, time, psutil, os
+import logging
+import sys
+import torch
+import torch.nn as nn
 import pandas as pd
 import numpy as np
-from getpass import getpass
+from transformers import T5Tokenizer, T5EncoderModel
+from huggingface_hub import login as hf_login
+from deprecated import deprecated
 from tqdm import tqdm
 from pathlib import Path
 from typing import Tuple, Optional, Dict, Any
-import torch
-import torch.nn as nn
-from transformers import T5Tokenizer, T5EncoderModel
-from huggingface_hub import login as hf_login
-from fairscale.nn.data_parallel import FullyShardedDataParallel as FSDP
-from fairscale.nn.wrap import enable_wrap, wrap
+from deprecated import deprecated
 
 
+# Initialize logging configuration.
 logger = logging.getLogger(__name__)
 
+
+# Define a type alias for model configuration dictionaries.
 ModelConfig = Dict[str, Any]
 
+
+# Define a dictionary containing configurations for different protein language models (pLMs).
+# Adapted from https://github.com/tsenoner/plm_choice/blob/main/src/data_preparation/embeddings/embedding_generation.py
 MODEL_CONFIGS: Dict[str, ModelConfig] = {
 	"prot_t5": {
 		"hf_id": "Rostlab/prot_t5_xl_half_uniref50-enc",
@@ -55,53 +62,67 @@ MODEL_CONFIGS: Dict[str, ModelConfig] = {
 }
 
 
-def load_df(path_to_metadata_tsv: str) -> pd.DataFrame:
-	"""Load metadata tsv containing protein information and protein sequences into a pandas DataFrame."""
-	df = pd.read_csv(path_to_metadata_tsv, sep="\t")
-	return df
-
-
 def preprocess_df(df: pd.DataFrame, model_type: str) -> pd.DataFrame:
-	"""Preprocess protein sequence depending on which model type is chosen.
+	"""Preprocess protein sequences for embedding depending on which model type is chosen.
 
-	Raises
-	---------
-	AssertionError 
-		If df does not contain a column "protein_seq"
+	Parameters
+	__________
+	df (pd.DataFrame):
+		DataFrame containing protein sequences and metadata. Must contain a column "protein_seq".
+		See :func:`phagegapclassifier.utils.parse_sequence_data` for expected format.
+	model_type (str):
+		Type of model to use for embedding. Options: "prot_t5", "prost_t5", "prot_t5xxl", "prost_t5".
+
+	Returns
+	_______
+	pd.DataFrame:
+		DataFrame with an additional column "processed_seq" containing preprocessed sequences ready for embedding.
 	"""
-	assert "protein_seq" in df.columns, "df does not contain column 'protein_seq'."
+	if not "protein_seq" in df.columns:
+		raise ValueError("Input DataFrame must contain a 'protein_seq' column with protein sequences.")
 
 	df["protein_seq"] = df["protein_seq"].str.upper()
 	df["processed_seq"] = df["protein_seq"].str.replace("[UZOB]", "X", regex=True)
 
-	# Prot T5 needs spaces between amino acids
 	if model_type in ("prot_t5", "prot_t5xxl"):
-		# only add spaces
+		# Only add spaces.
 		df["processed_seq"] = df["processed_seq"].apply(lambda aa: " ".join(list(aa)))
 	elif model_type == "prost_t5":
-		# add spaces and prefix for ProstT5
+		# Add spaces and prefix for ProstT5.
 		df["processed_seq"] = df["processed_seq"].apply(lambda aa: "<AA2fold> " + " ".join(list(aa)))
-	elif model_type == "glm2":
-		# add prefix for gLM2
-		df["processed_seq"] = df["processed_seq"].apply(lambda aa: "<+>" + "".join(list(aa)))
+	else:
+		logger.warning(f"Model type {model_type} not recognized for preprocessing. No preprocessing applied.")
 
 	return df
 
 
-def load_model(checkpoint: str, device: str) -> Tuple[nn.Module, Optional[T5Tokenizer]]:
+def load_embed_model(model_type: str, device: str) -> Tuple[nn.Module, Optional[T5Tokenizer]]:
 	"""Sets up the pLM model.
 
+	Parameters
+	__________
+	model_type (str):
+		Type of model to use for embedding. Options: "prot_t5", "prost_t5", "prot_t5xxl".
+	device (str):
+		Device to load the model onto. Options: "cpu", "cuda".
+	
+	Returns
+	_______
+	tuple[nn.Module, Optional[T5Tokenizer]]:
+		The loaded model and its tokenizer (if applicable). The tokenizer is required for ProtT5, ProstT5, and gLM2 models.
+		For other models, the tokenizer may be None.
+
 	Raises
-	---------
+	______
 	AssertionError 
-		If checkpoint or loader is not supported.
+		If model type or loader is not supported.
 	RunTimeError
 		If model could not be loaded.
 	"""
-	if checkpoint not in MODEL_CONFIGS:
-		raise ValueError(f"Unsupported model type: {checkpoint}. Supported types: {list(MODEL_CONFIGS.keys())}")
+	if model_type not in MODEL_CONFIGS:
+		raise ValueError(f"Unsupported model type: {model_type}. Supported types: {list(MODEL_CONFIGS.keys())}")
 	# Load configuration for the specified checkpoint/model.
-	config = MODEL_CONFIGS[checkpoint]
+	config = MODEL_CONFIGS[model_type]
 	hf_id = config["hf_id"]
 	loader = config["loader"]
 	model_class = config["model_class"]
@@ -122,9 +143,9 @@ def load_model(checkpoint: str, device: str) -> Tuple[nn.Module, Optional[T5Toke
 		login_to_huggingface()
 	try:
 		if loader == "transformers":
-			if checkpoint == "esm2_15b":
+			if model_type == "esm2_15b":
 				logger.error("ESM2_15B model loading is currently not implemented.")
-			elif checkpoint == "glm2":
+			elif model_type == "glm2":
 				logger.error("gLM2 model loading is currently not implemented.")
 			else:
 				# Load the model from pretrained weights.
@@ -134,7 +155,7 @@ def load_model(checkpoint: str, device: str) -> Tuple[nn.Module, Optional[T5Toke
 			if tokenizer_class:
 				tokenizer = tokenizer_class.from_pretrained(hf_id, **tokenizer_load_kwargs)
 				if tokenizer is None:
-					raise RuntimeError(f"Failed to load tokenizer for {checkpoint} from {hf_id}.")
+					raise RuntimeError(f"Failed to load tokenizer for {model_type} from {hf_id}.")
 
 			# Cast to full-precision if no GPU is available:
 			if device == "cpu":
@@ -144,50 +165,48 @@ def load_model(checkpoint: str, device: str) -> Tuple[nn.Module, Optional[T5Toke
 			logger.error("Native ESM loader is not fully implemented.")
 
 		if model is None:
-			raise RuntimeError(f"Failed to load model for {checkpoint}")
+			raise RuntimeError(f"Failed to load model for {model_type}")
 		
 		if post_load_hook:
 			post_load_hook(model)
 
-		if checkpoint not in ("glm2", "esmc_6b"):
+		if model_type not in ("glm2", "esmc_6b"):
 			model.to(device).eval()
 
-		logger.info(f"Model {checkpoint} successfully initialized on {device.type.upper()}.")
+		logger.info(f"Model {model_type} successfully initialized on {device.type.upper()}.")
 		return model, tokenizer
 	except Exception as e:
-		logger.error(f"Model {checkpoint} could not be loaded: {e}")
+		logger.error(f"Model {model_type} could not be loaded: {e}")
 		sys.exit(1)
 
 
-def monitor_load_embed_model(checkpoint, device):
-	process = psutil.Process(os.getpid())
+def compute_embeddings(model_type: str, df: pd.DataFrame, model: nn.Module, tokenizer: Optional[T5Tokenizer], only_last: bool):
+	"""Compute embeddings for protein sequences.
 
-	mem_before = process.memory_info().rss / 1024**2
-	start = time.perf_counter()
+	Model types supported:
+	- prot_t5
+	- prost_t5
+	- prot_t5xxl
+	
+	Other models are not yet implemented.
 
-	model, tokenizer = load_model(checkpoint, device)
+	Parameters
+	__________
+	model_type (str):
+		Model type to use for embedding.
+	df (pd.DataFrame):
+		DataFrame containing protein sequences and IDs. Must contain columns "processed_seq" and "protein_ID".
+	model (nn.Module):
+		Pretrained model to use for embedding.
+	tokenizer (Optional[T5Tokenizer]):
+		Tokenizer required for ProtT5, ProstT5, and gLM2 models.
+	only_last (bool):
+		Whether only the final representation embedding should be returned. If False, returns all hidden layers
 
-	end = time.perf_counter()
-	mem_after = process.memory_info().rss / 1024**2
-
-	logger.info(f"Time: {end - start:.2f} s")
-	logger.info(f"RAM:  {mem_after - mem_before:.2f} MB")
-
-	return model, tokenizer
-
-
-def compute_embeddings(checkpoint: str, df: pd.DataFrame, model: nn.Module, tokenizer: Optional[T5Tokenizer], only_last: bool):
-	"""Compute embeddings for protein sequences using ProtT5.
-
-	Params:
-		checkpoint (str): Model type, specified in config.yaml
-		df (pd.DataFrame): DataFrame containing protein sequences and IDs
-		model (nn.Module): Pretrained model
-		tokenizer (Optional[T5Tokenizer]): Tokenizer required for ProtT5, ProstT5, and gLM2
-		only_last (bool): Whether only the final representation embedding should be returned.
-
-	Returns:
-		dict: Mapping protein_ID -> embedding tensors
+	Returns
+	_______
+	dict:
+		Mapping protein_ID -> embedding tensors.
 	"""
 	if df.empty:
 		raise ValueError("DataFrame is empty. Please provide a DataFrame with protein sequences to embed.")
@@ -208,21 +227,21 @@ def compute_embeddings(checkpoint: str, df: pd.DataFrame, model: nn.Module, toke
 	embed_dict = {}
 
 	# Run embedding. Currently, only "prot_t5", "prost_t5", "prot_t5xxl" are supported.
-	if checkpoint == "esm2_15b":
+	if model_type == "esm2_15b":
 		raise NotImplementedError("esm2_15b embedding is currently not implemented.")
-	elif checkpoint == "esmc_6b":
+	elif model_type == "esmc_6b":
 		raise NotImplementedError("esmc_6b embedding is currently not implemented.")
 	else:
-		if not checkpoint in ("prot_t5", "prost_t5", "prot_t5xxl"):
-			raise NotImplementedError(f"Embedding with {checkpoint} is not implemented. Supported options: 'prot_t5', 'prost_t5', 'prot_t5xxl'.")
+		if not model_type in ("prot_t5", "prost_t5", "prot_t5xxl"):
+			raise NotImplementedError(f"Embedding with {model_type} is not implemented. Supported options: 'prot_t5', 'prost_t5', 'prot_t5xxl'.")
 		if tokenizer is None:
-			raise ValueError(f"Tokenizer is required for embedding with {checkpoint} but was not provided.")
+			raise ValueError(f"Tokenizer is required for embedding with {model_type} but was not provided.")
 		# Process sequences:
-		for i in tqdm(range(0, len(df), 1), desc=f"Embedding {checkpoint}"):
+		for i in tqdm(range(0, len(df), 1), desc=f"Embedding {model_type}"):
 			row = df.iloc[i]
 			seq = row["processed_seq"]
 			try:
-				emb = embed_seq_T5(seq, model, tokenizer, only_last, checkpoint)
+				emb = embed_seq_T5(seq, model, tokenizer, only_last, model_type)
 				embed_dict[row["protein_ID"]] = emb # 24 x (L, 1024) | 1 x (L, 1024)		   
 				print(f"Embedding for {row['protein_ID']}:")
 				print(f"{emb.shape if isinstance(emb, np.ndarray) else [e.shape for e in emb]}")
@@ -235,19 +254,29 @@ def compute_embeddings(checkpoint: str, df: pd.DataFrame, model: nn.Module, toke
 	return embed_dict 
 
 
-def embed_seq_T5(seq: str, model: T5EncoderModel, tokenizer: T5Tokenizer, only_last: bool, checkpoint: str):
+def embed_seq_T5(seq: str, model: T5EncoderModel, tokenizer: T5Tokenizer, only_last: bool, model_type: str):
 	"""Embeds a single amino acid sequence using Prot_T5 model.
 
-	Params:
-		seq (str): Protein sequence
-		model (T5EncoderModel): Prot_T5 model for embedding
-		tokenizer (T5Tokenizer): Prot_T5 tokenizer
-		only_last (bool): Whether only the final representation embedding should be returned. 
-							Returns all hidden layers otherwise.
+	Parameters
+	__________
+	seq (str):
+		Protein sequence.
+	model (T5EncoderModel):
+		Prot_T5 model for embedding.
+	tokenizer (T5Tokenizer):
+		Prot_T5 tokenizer.
+	only_last (bool):
+		Whether only the final representation embedding should be returned. 
+		Returns all hidden layers otherwise.
+	model_type (str):
+		Type of model to use for embedding. Options: "prot_t5", "prost_t5", "prot_t5xxl". Other models are not yet implemented.
 							
-	Returns:
-		last_layer_emb (np.ndarray): Array of final representation embedding
-		hidden_states (List[np.ndarray] | np.ndarray): List of arrays of shape (L, 1024) for each layer
+	Returns
+	_______
+	last_layer_emb (np.ndarray):
+		Array of final representation embedding.
+	hidden_states (List[np.ndarray] | np.ndarray):
+		List of arrays of shape (L, 1024) for each layer.
 	"""
 	tokenizer_kwargs = {
 		"return_tensors": "pt",
@@ -261,10 +290,10 @@ def embed_seq_T5(seq: str, model: T5EncoderModel, tokenizer: T5Tokenizer, only_l
 		with torch.no_grad():
 			outputs = model(**inputs)
 
-		if checkpoint in ("prot_t5", "prot_t5xxl"):
+		if model_type in ("prot_t5", "prot_t5xxl"):
 			# cut EOS token
 			last_layer_emb = outputs.last_hidden_state.squeeze(0).cpu().numpy()[:-1, :]
-		elif checkpoint == "prost_t5":
+		elif model_type == "prost_t5":
 			# cut prefix and EOS tokens
 			last_layer_emb = outputs.last_hidden_state.squeeze(0).cpu().numpy()[1:-1, :]
 
@@ -278,17 +307,21 @@ def embed_seq_T5(seq: str, model: T5EncoderModel, tokenizer: T5Tokenizer, only_l
 
 		all_hidden_states = outputs.hidden_states
 
-		if checkpoint == "prot_t5":
+		if model_type == "prot_t5":
 			# list of np.ndarrays, each shape (L, 1024), cleaned
 			hidden_states = [h.squeeze(0).cpu().numpy()[:-1, :] for h in all_hidden_states]
-		elif checkpoint == "prost_t5":
+		elif model_type == "prost_t5":
 			hidden_states = [h.squeeze(0).cpu().numpy()[1:-1, :] for h in all_hidden_states]
 
 		return hidden_states
 
 
+@deprecated(version='1.0.0', reason="Models that require huggingface login are not implemented. Please use models that do not require authentication.")
 def login_to_huggingface(token_path_str: Optional[str] = None):
-	"""Attempts to log in to Hugging Face Hub, optionally using a token from a specified path."""
+	"""Attempts to log in to Hugging Face Hub, optionally using a token from a specified path.
+	
+	`@deprecated(version='1.0.0', reason="Models that require huggingface login are not implemented. Please use models that do not require authentication.")`
+	"""
 	logger.info("Attempting to log in to Hugging Face Hub...")
 	token = None
 	token_file = None

@@ -1,25 +1,29 @@
 """
-Pooling utilities for pLM protein embeddings.
+Pooling utilities for pLM protein embeddings within `phagegapclassifier`.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Tuple, Dict, List
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
 import torch
 import torch.nn as nn
+import numpy as np
+import pandas as pd
+from typing import Tuple, Dict, List
+from tqdm import tqdm
+from deprecated import deprecated
 
+
+# Initialize logging configuration.
 logger = logging.getLogger(__name__)
 
 
 class AttentionPool(nn.Module):
-	"""
-	Attention pooling for protein embeddings. This layer computes attention scores for each token
-	in the sequence and uses these scores to compute a weighted sum of the token embeddings,
-	resulting in a single pooled embedding vector.
+	"""Attention pooling for protein embeddings.
+	
+	This layer computes attention scores for each token in the sequence and uses 
+	these scores to compute a weighted sum of the token embeddings, resulting in
+	a single pooled embedding vector.
 	"""
 	def __init__(self, emb_dim):
 		out_dim = emb_dim
@@ -34,51 +38,11 @@ class AttentionPool(nn.Module):
 		return self.fc(pooled) # (out_dim,)
 
 
-def filter_nan_embeddings(
-		embeddings: Dict[str, np.ndarray | List[np.ndarray]],
-		metadata_df: pd.DataFrame
-		) -> Tuple[Dict[str, np.ndarray], pd.DataFrame]:
-	"""
-	Remove embeddings that contain only zeros (as for ESM-3 not all proteins could be embedded).
-
-	Parameters
-	----------
-	embeddings (Dict[str, np.ndarray | List[np.ndarray]]):
-		Dictionary mapping `protein_ID` to a list of embedding(s), each of shape (L, embed_dim) for each layer.
-	metadata_df (pd.DataFrame):
-		DataFrame containing metadata for each protein, including `protein_ID`.
-
-	Returns
-	-------
-	Tuple[Dict[str, np.ndarray], pd.DataFrame]:
-		Filtered embeddings dictionary and corresponding filtered metadata DataFrame.
-	"""
-	
-	def is_all_nan(embedding):
-		"""
-		Helper function to check if an embedding is all NaN values. Works for both single-layer and multi-layer embeddings.
-		"""
-		if isinstance(embedding, list):
-			return all(np.all(np.isnan(e)) for e in embedding)
-		else:
-			return np.all(np.isnan(embedding))
-
-	# Identify zero vector protein IDs.
-	nan_vector_proteins = [protein_id for protein_id, embedding in embeddings.items() if is_all_nan(embedding)]
-	# Remove them from embed_dict.
-	filtered_embed_dict = {protein_id: embedding for protein_id, embedding in embeddings.items() if protein_id not in nan_vector_proteins}
-	# Remove corresponding rows in the metadata_df.
-	filtered_metadata_df = metadata_df[~metadata_df['protein_ID'].isin(nan_vector_proteins)]
-
-	return filtered_embed_dict, filtered_metadata_df
-
-
 def pool_embeddings(embeddings: Dict[str, List[np.ndarray] | np.ndarray], plm_model_name: str, layers: List[int], strategy: str) -> Dict[str, np.ndarray]:
-	"""
-	Pools specified hidden layers of protein sequence embeddings using a given strategy (e.g. mean/max pooling). 
+	"""Pools specified hidden layers of protein sequence embeddings using a given strategy (e.g. mean/max pooling). 
 
 	Parameters
-	----------
+	__________
 	embeddings (Dict[str, List[np.ndarray] | np.ndarray]):
 		Dictionary mapping `protein_ID` to a list of embedding(s), each of shape (L, embed_dim) for each layer.
 	plm_model_name (str):
@@ -89,7 +53,7 @@ def pool_embeddings(embeddings: Dict[str, List[np.ndarray] | np.ndarray], plm_mo
 		The pooling strategy, one of `mean`, `max`, or `FC`.
 
 	Returns
-	-------
+	_______
 	Dict[str, np.ndarray]:
 		Dictionary mapping `protein_ID` to pooled embedding vectors (np.ndarray).
 	"""
@@ -177,3 +141,44 @@ def pool_embeddings(embeddings: Dict[str, List[np.ndarray] | np.ndarray], plm_mo
 		pooled_embeddings[pid] = final_vector
 
 	return pooled_embeddings
+
+
+@deprecated(version='1.0.0', reason="Only relevant for EMS-3 pLM, which is no longer supported.")
+def filter_nan_embeddings(
+		embeddings: Dict[str, np.ndarray | List[np.ndarray]],
+		metadata_df: pd.DataFrame
+		) -> Tuple[Dict[str, np.ndarray], pd.DataFrame]:
+	"""Remove embeddings that contain only zeros (as for ESM-3 not all proteins could be embedded).
+
+	`@deprecated(version='1.0.0', reason="Only relevant for EMS-3 pLM, which is no longer supported.")`
+
+	Parameters
+	__________
+	embeddings (Dict[str, np.ndarray | List[np.ndarray]]):
+		Dictionary mapping `protein_ID` to a list of embedding(s), each of shape (L, embed_dim) for each layer.
+	metadata_df (pd.DataFrame):
+		DataFrame containing metadata for each protein, including `protein_ID`.
+
+	Returns
+	_______
+	Tuple[Dict[str, np.ndarray], pd.DataFrame]:
+		Filtered embeddings dictionary and corresponding filtered metadata DataFrame.
+	"""
+	
+	def is_all_nan(embedding):
+		"""
+		Helper function to check if an embedding is all NaN values. Works for both single-layer and multi-layer embeddings.
+		"""
+		if isinstance(embedding, list):
+			return all(np.all(np.isnan(e)) for e in embedding)
+		else:
+			return np.all(np.isnan(embedding))
+
+	# Identify zero vector protein IDs.
+	nan_vector_proteins = [protein_id for protein_id, embedding in embeddings.items() if is_all_nan(embedding)]
+	# Remove them from embed_dict.
+	filtered_embed_dict = {protein_id: embedding for protein_id, embedding in embeddings.items() if protein_id not in nan_vector_proteins}
+	# Remove corresponding rows in the metadata_df.
+	filtered_metadata_df = metadata_df[~metadata_df['protein_ID'].isin(nan_vector_proteins)]
+
+	return filtered_embed_dict, filtered_metadata_df

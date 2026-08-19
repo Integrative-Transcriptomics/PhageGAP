@@ -1,14 +1,11 @@
-# TOML format configuration file for the `PhageGap Classifer` software.
+# TOML format configuration file for the `PhageGAP` classifier software.
 
-title = "PhageGap Classifer 1.0.0-alpha Configuration"
+title = "PhageGAP Classifer 1.0.0 Configuration"
 
 [app]
 max_content_length = 500_000
 max_form_memory_size = 500_000
 max_form_parts = 1000
-host = "0.0.0.0"
-port = 5001
-debug = false
 api_token_path = "secrets/phagegap_api_token"
 structure_info_path = "phagegap_structures.tsv"
 
@@ -28,3 +25,4 @@ model_type = "cnn"
 [manifold]
 pca_path = "models/pca.joblib"
 tsne_path = "models/tsne.joblib"
+knn = 3
