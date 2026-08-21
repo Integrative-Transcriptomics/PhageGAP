@@ -1,12 +1,74 @@
 <section id="usage" class="about-section">
-	<h1>Usage</h1>
-	<p>
-		Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor
-		invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et
-		accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata
-		sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing
-		elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
-		sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita
-		kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-	</p>
+	<h1>How to use PhageGAP</h1>
+
+	<h2>Quick start</h2>
+	<ol>
+		<li>Paste protein FASTA text and/or upload a FASTA file.</li>
+		<li>Click <code>Function Classification</code>.</li>
+		<li>Click a <code>User Data</code> point in the <code>Global Embedding Landscape</code> to inspect predictions, nearest-neighbor alignment, and structure.</li>
+		<li>Optionally add genomic context from a GFF file.</li>
+	</ol>
+</section>
+
+<section id="provide-protein-sequences" class="about-section">
+	<h2>1) Provide protein sequences</h2>
+	<p>You can submit sequence data by text input, file upload, or both together. PhageGAP combines both inputs into one analysis request.</p>
+	<ul>
+		<li>Input must contain valid FASTA records.</li>
+		<li>The first token after <code>&gt;</code> is used as <code>protein_ID</code>.</li>
+		<li>The full FASTA header line is kept as description text.</li>
+		<li>Use unique protein IDs. Duplicate IDs in one submission keep only the last record; IDs already loaded in the current session are not added again.</li>
+	</ul>
+	<pre><code>&gt;prot_001 putative capsid protein
+MNNR...
+&gt;prot_002 tail fiber protein
+MDSK...</code></pre>
+</section>
+
+<section id="run-analysis" class="about-section">
+	<h2>2) Run the analysis</h2>
+	<p>Click <code>Function Classification</code> to submit your proteins. New results are appended to your current session and shown as <code>User Data</code> in the landscape view.</p>
+	<p class="remark"><b>Important:</b> Classification and GFF uploads are rate-limited. If you submit again too quickly, wait and retry.</p>
+</section>
+
+<section id="explore-results" class="about-section">
+	<h2>3) Explore the results</h2>
+	<ul>
+		<li><b>Global Embedding Landscape:</b> shows reference proteins by category and your submitted proteins as <code>User Data</code>.</li>
+		<li><b>Function Prediction and Nearest Neighbor Structure:</b> top predictions (<code>top1</code>, <code>top2</code>, <code>top3</code>) with probabilities, plus nearest-neighbor structure.</li>
+		<li><b>Nearest Neighbor Sequence Alignment:</b> aligned residues for the selected protein and its nearest neighbor.</li>
+		<li><b>Selection tools:</b> clear selection, zoom the landscape, or maximize the structure panel.</li>
+	</ul>
+	<p>Click any <code>User Data</code> point to update all linked views.</p>
+</section>
+
+<section id="add-genomic-context" class="about-section">
+	<h2>4) Add genomic context</h2>
+	<p>Use <code>Add Genomic Context</code> in the toolbar to upload a <code>.gff</code> or <code>.gff3</code> file.</p>
+	<ul>
+		<li>Only <code>CDS</code> features are used.</li>
+		<li>Features should provide standard 9-column GFF records with <code>key=value</code> attributes.</li>
+		<li>For linking to submitted proteins, the GFF <code>Name</code> attribute must match FASTA protein IDs.</li>
+	</ul>
+	<p>When IDs match, predicted categories are shown on genomic features and selection in the landscape can zoom to local genomic neighborhoods.</p>
+</section>
+
+<section id="save-restore-export" class="about-section">
+	<h2>5) Save, restore, or export</h2>
+	<ul>
+		<li><code>Download Results</code>: exports current user results as TSV (<code>phagegap-results-YYYY-MM-DD.tsv</code>).</li>
+		<li><code>Download Session</code>: exports selected protein, user results, and genomic features as compressed JSON (<code>.json.gz</code>).</li>
+		<li><code>Reload Session</code>: restores a saved session file (<code>.gz</code> / <code>.json.gz</code>).</li>
+		<li><code>Screenshot</code>: saves a PNG image of the current analysis panels.</li>
+	</ul>
+</section>
+
+<section id="usage-notes" class="about-section">
+	<h2>Tips and important notes</h2>
+	<ul>
+		<li>You must accept the cookie consent banner before API-backed features are enabled.</li>
+		<li>At least one valid FASTA record is required.</li>
+		<li>Large requests may fail (server request size limit is approximately 500 KB).</li>
+	</ul>
+	<p>For interpretation guidance, see <a href="#results-and-terms">Results and terms</a>.</p>
 </section>
