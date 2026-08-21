@@ -143,6 +143,24 @@ td {
 	z-index: 1000;
 }
 
+.notify {
+	background: rgba(255, 255, 255, 0.5) !important;
+	border-radius: 4px;
+	backdrop-filter: blur(3px);
+	-webkit-backdrop-filter: blur(3px);
+}
+
+.notify-title {
+	color: var(--text-light-color);
+	font-size: small !important;
+	font-weight: bold !important;
+}
+
+.notify-message {
+	color: var(--text-light-color);
+	font-size: small !important;
+}
+
 #selection-info-container {
 	display: none;
 }
