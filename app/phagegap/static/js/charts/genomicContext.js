@@ -117,6 +117,7 @@ export class GenomicContext extends Chart {
 		};
 
 		// Set the prepared option object to the ECharts instance and activate the chart.
+		this.state.setValue(null);
 		this.echart.setOption(option);
 		this.zoom();
 

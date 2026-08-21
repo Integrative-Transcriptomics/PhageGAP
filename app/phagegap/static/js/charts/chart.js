@@ -1,3 +1,5 @@
+import { Observable } from "../observable.js";
+
 /**
  * Class to build and manage ECharts instances for various chart types in the application.
  */
@@ -17,6 +19,16 @@ export class Chart {
 				this.resize();
 			});
 		}).observe(element);
+		this.state = new Observable(null);
+		this.state.onChange(() => {
+			let value = this.state.getValue();
+			console.log("Chart state changed: ", value);
+			if (value == null) {
+				this.setActive();
+			} else {
+				this.setLoading(value);
+			}
+		});
 	}
 
 	/**

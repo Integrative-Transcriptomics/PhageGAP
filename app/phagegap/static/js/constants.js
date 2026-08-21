@@ -115,4 +115,4 @@ export const SUBCATEGORY_MAP = {
 /**
  * Color for unknown or unclassified categories in visualizations.
  */
-export const NA_COLOR = "#CDD3D5";
+export const NA_COLOR = "#BBBBBB";

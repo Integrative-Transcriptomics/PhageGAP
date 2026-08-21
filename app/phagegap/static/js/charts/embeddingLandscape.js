@@ -166,10 +166,14 @@ export class EmbeddingLandscape extends Chart {
 			zlevel: 12, // Render the "User Data" series above the other series to ensure visibility.
 			markLine: {
 				// Mark line style used with highlight to connect the nearest neighbor of the clicked point to the clicked point.
-				symbol: ["none", "none"], // Removes arrows from the start and end.
+				symbol: ["none", "arrow"], // Removes arrows from the start and end.
+				emphasis: {
+					disabled: true, // Disable emphasis effect on the mark line to avoid distraction.
+				},
 				lineStyle: {
 					color: "#000000",
 					type: "solid",
+					width: 1,
 				},
 				data: [], // This will be populated dynamically when a user data point is clicked.
 			},
@@ -193,6 +197,7 @@ export class EmbeddingLandscape extends Chart {
 	 * @param {object} clicked An entry from the `userdataTable` corresponding to the clicked data point in the embedding landscape chart.
 	 */
 	highlight(clicked) {
+		console.log(clicked);
 		const nearestNeighborPoint = metadataTable.entry(
 			clicked.nearest_neighbor_ID,
 		);
@@ -205,12 +210,18 @@ export class EmbeddingLandscape extends Chart {
 						markLine: {
 							data: [
 								[
-									{ coord: [clicked.tsne_1, clicked.tsne_2] },
 									{
+										coord: [clicked.tsne_1, clicked.tsne_2],
+									},
+									{
+										name: clicked.protein_ID,
 										coord: [
 											nearestNeighborPoint.tsne_1,
 											nearestNeighborPoint.tsne_2,
 										],
+										label: {
+											show: true,
+										},
 									},
 								],
 							],

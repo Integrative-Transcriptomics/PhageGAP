@@ -76,15 +76,24 @@ export function initApp() {
 	categoryProbabilities = new CategoryProbabilities(
 		document.getElementById("category-probabilities-chart-container"),
 	);
+	categoryProbabilities.state.setValue("Submit data or reload session to view function predictions.")
+
 	sequenceAlignment = new SequenceAlignment(
 		document.getElementById("sequence-alignment-chart-container"),
 	);
-	sequenceAlignment.observeZoom(); // Set up zoom observation for the sequence alignment chart.
-	structureView = new StructureView(
-		document.getElementById("structure-view-container"),
+	sequenceAlignment.state.setValue(
+		"Submit data or reload session to view sequence alignment and predicted structure of the nearest neighbor protein.",
 	);
+
 	genomicContext = new GenomicContext(
 		document.getElementById("genomic-context-chart-container"),
+	);
+	genomicContext.state.setValue(
+		"Submit a GFF file via the toolbar to view genomic context.",
+	);
+
+	structureView = new StructureView(
+		document.getElementById("structure-view-container"),
 	);
 
 	// Initialize click handler for the embedding landscape chart.
@@ -165,6 +174,8 @@ function handleSelectionChange() {
 
 		// Show the category probabilities for the clicked protein in the category probabilities chart.
 		if (categoryProbabilities && clicked) categoryProbabilities.show(clicked);
+		// Clear the loading state of the category probabilities chart.
+		categoryProbabilities.state.setValue(null);
 
 		// Highlight the nearest neighbor of the clicked "User Data" point in the embedding landscape chart.
 		if (embeddingLandscape && clicked) embeddingLandscape.highlight(clicked);
@@ -192,6 +203,8 @@ function handleSelectionChange() {
 					clicked.nearest_neighbor_ID,
 					selected.getValue(),
 				);
+				// Clear the loading state of the sequence alignment chart.
+				sequenceAlignment.state.setValue(null);
 
 				structureView.clear(); // Clear the structure view before adding new content.
 				structureView.fill(response.data.structure_data, "cif"); // Add the protein structure to the structure view.
@@ -202,6 +215,11 @@ function handleSelectionChange() {
 				);
 			})
 			.catch((error) => {
+				// Display an error notification as state of the sequence alignment chart.
+				sequenceAlignment.state.setValue(
+					"Failed to retrieve sequence alignment and structure data. Please try another protein.",
+				);
+
 				console.error(error);
 				let message = error.message;
 				if (error.response.data) {
@@ -213,10 +231,11 @@ function handleSelectionChange() {
 					"warning",
 				);
 			});
-		
+
 		// Toggle display of the selection info container in the toolbar to show the currently selected protein.
 		document.getElementById("selection-info-container").style.display = "block";
-		document.getElementById("selection-info-label").innerHTML = `Selected <code>${selected.getValue()}</code>`;
+		document.getElementById("selection-info-label").innerHTML =
+			`Selected <code>${selected.getValue()}</code>`;
 	} else {
 		// If the selection is null (cleared), hide and clear respective UI elements and reset zoom.
 		categoryProbabilities.clear();
@@ -226,6 +245,13 @@ function handleSelectionChange() {
 		sequenceAlignment.clear();
 		document.getElementById("selection-info-container").style.display = "none";
 		document.getElementById("selection-info-label").innerHTML = "";
+		
+		categoryProbabilities.state.setValue(
+			"Click on a User Data point to view function predictions.",
+		);
+		sequenceAlignment.state.setValue(
+			"Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.",
+		);
 	}
 }
 
@@ -487,6 +513,13 @@ function processUserData(data) {
 
 		// Update the genomic context chart to reflect the newly loaded user-submitted data, if applicable.
 		genomicContext.fill();
+
+		categoryProbabilities.state.setValue(
+			"Click on a User Data point to view function predictions.",
+		);
+		sequenceAlignment.state.setValue(
+			"Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.",
+		);
 	});
 }
 
@@ -572,7 +605,12 @@ async function restoreSession() {
 			processFeatures(sessionData.features);
 		}
 
-		if (sessionData.selected != null) selected.setValue(sessionData.selected);
+		if (sessionData.selected != null) {
+			selected.setValue(sessionData.selected);
+		} else {
+			categoryProbabilities.state.setValue("Click on a User Data point to view function predictions.");
+			sequenceAlignment.state.setValue("Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.");
+		}
 	} catch (error) {
 		console.error(error);
 		util.displayNotification(

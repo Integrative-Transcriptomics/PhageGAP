@@ -14,7 +14,7 @@ export class StructureView {
 		this.glviewer = $3Dmol.createViewer($("#" + element.id), {
 			opacity: 0,
 			antialias: true,
-			cartoonQuality: 4,
+			cartoonQuality: 6,
 		});
 	}
 
@@ -36,7 +36,7 @@ export class StructureView {
 	fill(data, format) {
 		this.glviewer.addModel(data, format);
 		this.glviewer.zoomTo();
-		var clrf = function (atom) {
+		var setColor = function (atom) {
 			if (!structureColors || structureColors.length == 0) return NA_COLOR;
 			return structureColors[atom.resi - 1] || NA_COLOR;
 		};
@@ -44,11 +44,16 @@ export class StructureView {
 			{},
 			{
 				cartoon: {
-					colorfunc: clrf,
+					colorfunc: setColor,
 					radius: 0.4,
 				},
 			},
 		);
+		/*this.glviewer.addSurface($3Dmol.SurfaceType.MS, {
+			smoothness: 1,
+			opacity: 0.5,
+			color: NA_COLOR,
+		});*/
 		this.glviewer.render();
 	}
 

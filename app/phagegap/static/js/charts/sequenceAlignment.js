@@ -2,10 +2,10 @@ import { Chart } from "./chart.js";
 import { NA_COLOR } from "../constants.js";
 
 const ALIGNMENT_COLORS = {
-	M: "#4477BB",
-	X: "#CC4466",
-	D: "#EEBBDD",
-	I: "#EEEEBB",
+	M: "#578DC9",
+	X: "#D9070D",
+	D: "#C8B9D1",
+	I: "#F6B93D",
 	NA: NA_COLOR,
 };
 
