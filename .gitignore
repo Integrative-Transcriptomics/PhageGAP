@@ -1,5 +1,6 @@
 classifier/images/*
 classifier/models/*
+classifier/src/deprecated/
 app/phagegap/static/resources/secrets/*
 app/phagegap/__pycache__/*
 secrets/*
