@@ -26,7 +26,7 @@ api_blueprint = Blueprint("api", __name__)
 def require_api_token():
 	"""Checks for a valid API token in the Authorization header of incoming requests.
 
-	If the token is missing or invalid, return a 401 Unauthorized response.
+	If the token is invalid, return a 401 Unauthorized response.
 	"""
 	api_token = _get_extension("api_token")
 	if api_token is None:
@@ -58,7 +58,7 @@ def is_active():
 
 
 @api_blueprint.get("/structure")
-def get_structure():
+def serve_structure():
 	"""`GET` request endpoint to retrieve structure information for a given protein ID.
 
 	Expects a query parameter `protein_id` in the request URL.
@@ -100,8 +100,8 @@ def get_structure():
 		return {"error": f"Unexpected error while retrieving structure information for {protein_id}: {exc}"}, 500
 
 
-@api_blueprint.post("/predict")
-def predict():
+@api_blueprint.get("/predict")
+def run_prediction():
 	"""`POST` request endpoint to predict functional classes for a given set of protein sequences.
 	
 	See :func:`phagegapclassifier.api._predict` for details.
