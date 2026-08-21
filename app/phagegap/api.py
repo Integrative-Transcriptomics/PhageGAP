@@ -10,7 +10,7 @@ import requests
 import numpy as np
 from phagegap import app
 from phagegap.util import GFFParser, read_sequence_from_cif, align_sequences
-from flask import request, render_template, jsonify, session
+from flask import request, render_template, jsonify, session, Response
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from traceback import print_exc
@@ -42,10 +42,13 @@ def authenticate():
 	valid = ( consent_cookie == "accepted" and hmac.compare_digest(supplied_csrf_token, expected_csrf_token) )
 
 	if not valid:
-		response = jsonify({"error": "Unauthorized request. Missing or invalid token."})
-		response.status_code = 401
-		response.headers["WWW-Authenticate"] = "Bearer"
-		return response
+		return Response(
+			"Unauthorized request. Missing or invalid token.",
+			401,
+			{
+				"WWW-Authenticate": "Bearer",
+			}
+		)
 
 	return None
 
@@ -60,7 +63,7 @@ def index():
 
 
 @app.route("/api/metadata", methods=["GET"])
-@limiter.limit("50 per minute")  # Limit to 50 requests per minute per IP address.
+@limiter.limit("10 per minute")  # Limit to 50 requests per minute per IP address.
 def serve_metadata():
 	"""Serves the metadata as a JSON response.
 	
@@ -70,11 +73,11 @@ def serve_metadata():
 		return app.extensions["metadata"].fillna("null").to_dict(orient="records"), 200
 	except Exception as e:
 		print_exc()
-		return {"error": str(e)}, 500
+		return f"Failed to fetch metadata: {str(e)}", 500
 
 
 @app.route("/api/classifier/nninfo", methods=["POST"])
-@limiter.limit("50 per minute")  # Limit to 50 requests per minute per IP address.
+@limiter.limit("60 per minute")  # Limit to 50 requests per minute per IP address.
 def serve_nearest_neighbor_information():
 	"""Serves information about the nearest neighbor of a user-provided protein.
 
@@ -104,9 +107,9 @@ def serve_nearest_neighbor_information():
 	"""
 	try:
 		if not "nn_protein_id" in request.args:
-			return {"error": "No nearest neighbor protein ID was provided."}, 400
+			return "No nearest neighbor protein ID was provided.", 400
 		if not "protein_seq" in request.form:
-			return {"error": "No protein sequence was provided."}, 400
+			return "No protein sequence was provided.", 400
 		nn_protein_id = request.args.get("nn_protein_id")
 		protein_seq = request.form.get("protein_seq")
 
@@ -132,7 +135,7 @@ def serve_nearest_neighbor_information():
 		# Extract the amino acid sequence from the CIF content.
 		cif_content = response_dict.get("structure_data")
 		if cif_content is None:
-			return {"error": f"No structure data found for {nn_protein_id}."}, 404
+			return f"No structure data found for {nn_protein_id}.", 404
 		nn_seq = read_sequence_from_cif(cif_content)
 
 		# Align the nearest neighbor sequence with the sequence provided by the user.
@@ -141,11 +144,11 @@ def serve_nearest_neighbor_information():
 		return response_dict, 200
 	except Exception as e:
 		print_exc()
-		return {"error": str(e)}, 500
+		return f"Failed to retrieve nearest neighbor information: {str(e)}", 500
 
 
 @app.route("/api/gff", methods=["POST"])
-@limiter.limit("50 per minute")  # Limit to 50 requests per minute per IP address.
+@limiter.limit("2 per minute")  # Limit to 50 requests per minute per IP address.
 def process_gff():
 	"""Processes a GFF file uploaded by the user and returns the parsed features as JSON.
 
@@ -161,11 +164,11 @@ def process_gff():
 		return jsonify(features), 200
 	except Exception as e:
 		print_exc()
-		return {"error": str(e)}, 500
+		return f"Failed to process GFF: {str(e)}", 500
 
 
 @app.route("/api/classifier/predict", methods=["POST"])
-@limiter.limit("50 per minute")  # Limit to 50 requests per minute per IP address.
+@limiter.limit("1 per minute")  # Limit to 50 requests per minute per IP address.
 def serve_classifier_prediction():
 	"""Serves the prediction results from the PhageGap classifier for a given set of protein sequences.
 
@@ -177,7 +180,7 @@ def serve_classifier_prediction():
 	"""
 	try:
 		if "file" not in request.files and "text" not in request.form:
-			return {"error": "No sequence content in request."}, 400
+			return "No sequence content in request.", 400
 
 		# Collect FASTA input.
 		parts = []
@@ -196,10 +199,10 @@ def serve_classifier_prediction():
 				SeqIO.parse(StringIO(sequence_text), "fasta")
 			)
 		except Exception as e:
-			return {"error": f"Error parsing FASTA sequences: {e}"}, 500
+			return f"Error parsing FASTA sequences: {e}", 500
 
 		if len(sequence_records) == 0:
-			return {"error": "No valid FASTA records found."}, 400
+			return "No valid FASTA records found.", 400
 
 		# Prepare user data structure to store results.
 		# Note: It is important to duplicate the protein ID as key for later merging.
@@ -274,4 +277,4 @@ def serve_classifier_prediction():
 
 	except Exception as e:
 		print_exc()
-		return {"error": f"Classification request failed: {str(e)}"}, 500
+		return f"Classification request failed: {str(e)}", 500
