@@ -25,6 +25,7 @@ From: python:3.12-slim
     export PHAGEGAP_BIND_ADDRESS=0.0.0.0
     export PHAGEGAP_PORT=20101
     export PYTHONUNBUFFERED=1
+    export CUDA_LOG_FILE=stderr
 
 %startscript
     cd /app
