@@ -186,7 +186,6 @@ function handleSelectionChange() {
 				},
 			})
 			.then((response) => {
-				console.log(response);
 				sequenceAlignment.fill(
 					response.data.sequence_alignment[0],
 					response.data.sequence_alignment[1],
@@ -204,7 +203,15 @@ function handleSelectionChange() {
 			})
 			.catch((error) => {
 				console.error(error);
-				catchBadResponse(error.response);
+				let message = error.message;
+				if (error.response.data) {
+					message += `<hr>${error.response.data}`;
+				}
+				util.displayNotification(
+					"Failed to retrieve nearest neighbor information: " + message,
+					"Error",
+					"warning",
+				);
 			});
 		
 		// Toggle display of the selection info container in the toolbar to show the currently selected protein.
@@ -314,17 +321,26 @@ function toggleMaximizeStructureView() {
  * The resulting image is then converted to a data URL and downloaded as a PNG file.
  */
 function captureScreenshot() {
-	html2canvas(document.getElementById("screenshot-area"), {
-		scale: 4,
-	}).then((canvas) => {
-		// Convert the canvas to a data URL and create a download link.
-		const dataURL = canvas.toDataURL("image/png");
-		const downloadLink = document.createElement("a");
-		downloadLink.href = dataURL;
-		downloadLink.download = `phagegap-screenshot-${new Date().toISOString().slice(0, 10)}.png`;
-		downloadLink.click(); // Trigger the download.
-		downloadLink.remove(); // Clean up the download link element after use.
-	});
+	try {
+		html2canvas(document.getElementById("app-area"), {
+			scale: 4,
+		}).then((canvas) => {
+			// Convert the canvas to a data URL and create a download link.
+			const dataURL = canvas.toDataURL("image/png");
+			const downloadLink = document.createElement("a");
+			downloadLink.href = dataURL;
+			downloadLink.download = `phagegap-screenshot-${new Date().toISOString().slice(0, 10)}.png`;
+			downloadLink.click(); // Trigger the download.
+			downloadLink.remove(); // Clean up the download link element after use.
+		});
+	} catch (error) {
+		console.error(error);
+		util.displayNotification(
+			"Failed to capture screenshot: " + error.message,
+			"Error",
+			"warning",
+		);
+	}
 }
 
 /**
@@ -367,7 +383,15 @@ function requestMetadata() {
 		})
 		.catch((error) => {
 			console.error(error);
-			util.notifyResponse(error.response);
+			let message = error.message;
+			if (error.response.data) {
+				message += `<hr>${error.response.data}`;
+			}
+			util.displayNotification(
+				"Failed to fetch metadata: " + message,
+				"Error",
+				"warning",
+			);
 		});
 }
 
@@ -375,34 +399,54 @@ function requestMetadata() {
  * Sends a classification request to the server with the provided input data.
  */
 function requestPrediction() {
-	// Check if a file has been selected for upload.
-	var fileInput = document.getElementById("data-input-file");
-	var formData = new FormData();
-	if (fileInput.files.length > 0) {
-		// Check if the file input has a file selected.
-		formData.append("file", fileInput.files[0]);
-	}
-	var textInput = document.getElementById("data-input-text");
-	var textData = textInput.value.trim();
-	if (textData) {
-		// Check if the text input has a value.
-		formData.append("text", textData);
-	}
-	// Check if the form data is empty (no file or text input provided).
-	if (formData.entries().next().done) {
-		displayNotification(
-			"Before starting function classification, please provide a FASTA file or at least one sequence in the sequence form.",
-			"Input Required",
-			"alert mono",
+	document.getElementById("app-area").style.display = "block"; // Ensure the app area is visible before proceeding.
+
+	try {
+		// Check if a file has been selected for upload.
+		var fileInput = document.getElementById("data-input-file");
+		var formData = new FormData();
+		if (fileInput.files.length > 0) {
+			// Check if the file input has a file selected.
+			formData.append("file", fileInput.files[0]);
+		}
+		var textInput = document.getElementById("data-input-text");
+		var textData = textInput.value.trim();
+		if (textData) {
+			// Check if the text input has a value.
+			formData.append("text", textData);
+		}
+		// Check if the form data is empty (no file or text input provided).
+		if (formData.entries().next().done) {
+			util.displayNotification(
+				"No input data provided. Please select a file or enter text for classification.",
+				"Info",
+				"alert",
+			);
+			return false;
+		}
+	} catch (error) {
+		console.error(error);
+		util.displayNotification(
+			"Failed to prepare input data for classification: " + error.message,
+			"Error",
+			"warning",
 		);
 		return false;
 	}
+
+	// Show notification that the classification request is being processed.
+	util.displayNotification(
+		"Submitted data for classification. This may take a few moments...",
+		"Info",
+		"info",
+	);
 
 	// Send the form data to the server using a POST request.
 	axios
 		.post("/api/classifier/predict", formData, {
 			headers: {
-				"X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+				"X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')
+					.content,
 			},
 		})
 		.then((response) => {
@@ -410,7 +454,15 @@ function requestPrediction() {
 		})
 		.catch((error) => {
 			console.error(error);
-			util.notifyResponse(error.response);
+			let message = error.message;
+			if (error.response.data) {
+				message += `<hr>${error.response.data}`;
+			}
+			util.displayNotification(
+				"Failed to classify submitted data: " + message,
+				"Error",
+				"warning",
+			);
 		});
 }
 
@@ -430,13 +482,6 @@ function processUserData(data) {
 	}
 	// Initialize the user-data table with the received data.
 	promiseUserdataTable(data).then(() => {
-		// Display a notification to the user indicating that the results have been successfully loaded.
-		util.displayNotification(
-			"Classification results have been successfully loaded.",
-			"Done",
-			"success mono",
-		);
-
 		// Update the embedding landscape chart to reflect the newly loaded user-submitted data.
 		embeddingLandscape.update();
 
@@ -467,15 +512,23 @@ function requestFeatures() {
 				})
 				.catch((error) => {
 					console.error(error);
-					catchBadResponse(error.response);
+					util.displayNotification(
+						"Failed to load genome context: " + error.message,
+						"Error",
+						"warning",
+					);
 				});
 		})
 		.catch((error) => {
 			console.error(error);
-			displayNotification(
-				"Failed to load genome context: " + error.message,
+			let message = error.message;
+			if (error.response.data) {
+				message += `<hr>${error.response.data}`;
+			}
+			util.displayNotification(
+				"Failed to load genome context: " + message,
 				"Error",
-				"warning mono",
+				"warning",
 			);
 		});
 }
@@ -502,24 +555,32 @@ function processFeatures(data) {
  * parses the JSON content, and updates the application state accordingly.
  */
 async function restoreSession() {
-	const formData = await util.promptFile(".gz,.json.gz");
-	const file = formData.get("file");
+	try {
+		const formData = await util.promptFile(".gz,.json.gz");
+		const file = formData.get("file");
 
-	const compressed = await file.arrayBuffer();
-	const content = await util.decompress(compressed, "gzip");
+		const compressed = await file.arrayBuffer();
+		const content = await util.decompress(compressed, "gzip");
 
-	const sessionData = JSON.parse(content);
-	console.log(sessionData, sessionData.features != []);
-	if (typeof sessionData.features == 'string') {
-		sessionData.features = JSON.parse(sessionData.features);
-		processUserData(sessionData.userdata);
+		const sessionData = JSON.parse(content);
+		if (typeof sessionData.features == 'string') {
+			sessionData.features = JSON.parse(sessionData.features);
+			processUserData(sessionData.userdata);
+		}
+		if (typeof sessionData.userdata == 'string') {
+			sessionData.userdata = JSON.parse(sessionData.userdata);
+			processFeatures(sessionData.features);
+		}
+
+		if (sessionData.selected != null) selected.setValue(sessionData.selected);
+	} catch (error) {
+		console.error(error);
+		util.displayNotification(
+			"Failed to restore session: " + error.message,
+			"Error",
+			"warning",
+		);
 	}
-	if (typeof sessionData.userdata == 'string') {
-		sessionData.userdata = JSON.parse(sessionData.userdata);
-		processFeatures(sessionData.features);
-	}
-
-	if (sessionData.selected != null) selected.setValue(sessionData.selected);
 }
 
 /**
@@ -528,7 +589,14 @@ async function restoreSession() {
  * The downloaded file is named with the current date in the format `phagegap-results-YYYY-MM-DD.tsv`.
  */
 function downloadResults() {
-	if (!userdataTable) return;
+	if (!userdataTable) {
+		util.displayNotification(
+			"No session data available to download. Please submit data first.",
+			"Info",
+			"alert",
+		);
+		return;
+	}
 	util.downloadBlob(
 		new Blob([userdataTable.table.toCSV({ delimiter: "\t" })], {
 			type: "text/plain",
@@ -543,10 +611,15 @@ function downloadResults() {
  * The downloaded file is named with the current date in the format `phagegap-session-YYYY-MM-DD`.
  */
 function downloadSession() {
-	let userdataRecords = [];
-	if (userdataTable) {
-		userdataRecords = userdataTable.table.toJSON({ type: "rows" });
+	if (!userdataTable) {
+		util.displayNotification(
+			"No session data available to download. Please submit data first.",
+			"Info",
+			"alert",
+		);
+		return;
 	}
+	let userdataRecords = userdataTable.table.toJSON({ type: "rows" });
 	let featureRecords = [];
 	if (featureTable) {
 		featureRecords = featureTable.table.toJSON({ type: "rows" });

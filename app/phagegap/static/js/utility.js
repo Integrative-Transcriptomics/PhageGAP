@@ -9,10 +9,29 @@
 export function displayNotification(
 	message,
 	title = "Notification",
-	style = "info",
+	style = "alert",
 	keepOpen = true,
 ) {
+	let icon = "";
+	switch (style) {
+		case "info":
+			icon = "fa-solid fa-circle-info";
+			break;
+		case "success":
+			icon = "fa-solid fa-circle-check";
+			break;
+		case "warning":
+			icon = "fa-solid fa-triangle-exclamation";
+			break;
+		case "alert":
+			icon = "fa-solid fa-circle-info";
+			break;
+		default:
+			break;
+	}
+	title = `<i class="${icon}"></i> ${title}`;
 	message += `<br><span class="text-small text-center reduce-3">Click to close.</span>`;
+	style += " mono";
 	Metro.notify.create(message, title, {
 		width: 400,
 		keepOpen: keepOpen,

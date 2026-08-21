@@ -1,6 +1,7 @@
 import { Chart } from "./chart.js";
 import { CATEGORY_COLORS, SUBCATEGORY_MAP, NA_COLOR } from "../constants.js";
 import { metadataTable, userdataTable } from "../main.js";
+import { displayNotification } from "../utility.js";
 
 /**
  * Class to build and manage the embedding landscape chart using ECharts.
@@ -176,6 +177,13 @@ export class EmbeddingLandscape extends Chart {
 
 		// Update the chart with the new options.
 		this.echart.setOption(option);
+
+		// Display user notification about successful loading of the embedding landscape chart.
+		displayNotification(
+			`Loaded ${userdataTable.entries().length} proteins into <code>Embedding Landscape</code>.`,
+			"Success",
+			"success",
+		);
 	}
 
 	/**

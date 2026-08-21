@@ -1,5 +1,6 @@
 import { Chart } from "./chart.js";
 import { userdataTable, selected } from "../main.js";
+import { displayNotification } from "../utility.js";
 import { CATEGORY_COLORS, SUBCATEGORY_MAP, NA_COLOR } from "../constants.js";
 
 export class GenomicContext extends Chart {
@@ -118,6 +119,13 @@ export class GenomicContext extends Chart {
 		// Set the prepared option object to the ECharts instance and activate the chart.
 		this.echart.setOption(option);
 		this.zoom();
+
+		// Display user notification about successful loading of the genomic context chart.
+		displayNotification(
+			`Loaded ${this.features.length} features into <code>Genomic Context</code>.`,
+			"Success",
+			"success",
+		);
 	}
 
 	zoom() {
