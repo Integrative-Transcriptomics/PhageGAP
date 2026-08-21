@@ -1,0 +1,254 @@
+* {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+	font-family: Arial, Helvetica, sans-serif;
+
+	/* Backgrounds */
+	--bg-color-1: #ffffff;
+	--bg-color-2: #f7f9fc;
+	--bg-color-3: #eef3fb;
+
+	/* Gradients / highlights */
+	--gradient-blue-1: #16a3f4;
+	--gradient-blue-2: #1567e2;
+	--gradient-purple-1: #5534e5;
+	--gradient-purple-2: #7c3fe6;
+	--shadow-clr: #0624651a;
+	--alert: #ffcc00;
+	--warning: #cb0e40;
+
+	/* Text and icons */
+	--text-color: #000000;
+	--text-light-color: #333333;
+	--text-light2-color: #666666;
+	--icon-color: #062465;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	background-color: var(--bg-color-1);
+	color: var(--text-color);
+}
+
+td {
+  padding-left: 8px;
+  vertical-align: top;
+  text-align: justify;
+}
+
+.centered {
+	display: flex;
+	justify-content: center !important;
+	align-items: center !important;
+	text-align: center;
+}
+
+.alert {
+	background: var(--warning) !important;
+	color: var(--bg-color-1);
+	border: none;
+	border-radius: 4px;
+	padding: 10px 20px;
+	font-size: 1rem;
+}
+
+.styled-button {
+	background: var(--icon-color);
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	padding: 10px 20px;
+	font-size: 1rem;
+	cursor: pointer;
+}
+
+.styled-button:hover {
+	background: var(--gradient-blue-2);
+	transition: 0.3s;
+}
+
+.undecorated-button {
+	background: none;
+	border: none;
+	padding: 0;
+	margin: 0;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.undecorated-button:hover {
+	background: none;
+	text-decoration: underline !important;
+}
+
+.label {
+	font-size: 0.9rem !important;
+	font-weight: 600 !important;
+	color: var(--text-light-color);
+}
+
+.tabs-material-wrapper {
+	background-color: var(--bg-color-3);
+	color: var(--text-light-color);
+	box-shadow: 0 2px 4px var(--bg-color-2);
+}
+
+.tabs-material li {
+	font-family: Arial, Helvetica, sans-serif;
+	color: var(--text-light-color);
+}
+
+.tab-marker {
+	background: linear-gradient(90deg, var(--icon-color), var(--gradient-purple-2));
+	border-radius: 2px;
+}
+
+.phagegap-logo-text {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 1rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+
+	background: linear-gradient(
+		90deg,
+		#061f63 0%,
+		#061f63 58%,
+		#6f3be8 68%,
+		#7c3fe6 100%
+	);
+
+	-webkit-background-clip: text;
+	background-clip: text;
+
+	-webkit-text-fill-color: transparent;
+	color: transparent;
+}
+
+.phagegap-cookie-disclaimer {
+	position: fixed;
+	font-family: monospace;
+	bottom: 0;
+	left: 0;
+	background: var(--bg-color-1);
+	border: 1px solid var(--bg-color-3);
+	border-radius: 4px;
+	padding: 1rem;
+	box-shadow: 0 0px 24px rgba(6, 36, 101, 0.1);
+	z-index: 1000;
+}
+
+#selection-info-container {
+	display: none;
+}
+
+#selection-clear-button {
+	color: var(--warning);
+}
+
+#data-input {
+	padding: 5px;
+}
+
+#embedding-landscape-chart-container {
+	height: 60vh;
+	width: 73vw;
+	border-radius: 3px;
+}
+
+#category-probabilities-chart-container {
+	height: 18vh;
+	width: 27vw;
+	margin-bottom: 2vh;
+	background: var(--bg-color-2);
+	border-radius: 3px;
+}
+
+#structure-view-container {
+	height: 40vh;
+	width: 27vw;
+	background: var(--bg-color-2);
+	border-radius: 3px;
+}
+
+#structure-view-info {
+	position: absolute;
+	color: var(--text-light-color);
+	font-family: monospace;
+	font-size: small;
+	background: transparent;
+	z-index: 2;
+}
+
+#sequence-alignment-chart-container {
+	height: 9vh;
+	width: auto;
+	background: rgba(247, 249, 252, 0.8);
+	border-radius: 3px;
+}
+
+#genomic-context-chart-container {
+	height: 10vh;
+	width: auto;
+	background: #f7f9fccc;
+	border-radius: 3px;
+}
+
+#about {
+	min-height: calc(100vh - 5rem);
+	background: var(--bg-color-2);
+	color: var(--text-color);
+	padding: 1rem;
+}
+
+.about-nav {
+	position: sticky;
+	top: 4rem;
+	background: var(--bg-color-1);
+	border: 1px solid var(--bg-color-3);
+	border-radius: 4px;
+	padding: 1rem;
+	box-shadow: 0 8px 24px rgba(6, 36, 101, 0.1);
+}
+
+.about-nav h3 {
+	color: var(--text-color);
+}
+
+.about-nav ul {
+	list-style: none;
+	padding-left: 0;
+}
+
+.about-nav li a {
+	color: var(--icon-color);
+	margin-bottom: 0.5rem;
+	cursor: pointer;
+}
+
+.about-nav li a:hover {
+	color: var(--gradient-blue-2);
+	transition: 0.3s;
+}
+
+.about-content {
+	background: var(--bg-color-1);
+	border: 1px solid var(--bg-color-3);
+	border-radius: 4px;
+	padding: 1rem;
+	box-shadow: 0 8px 24px rgba(6, 36, 101, 0.1);
+}
+
+.about-section {
+	margin-bottom: 2rem;
+}
+
+.about-section p {
+	text-align: justify;
+	padding-right: 1rem;
+}

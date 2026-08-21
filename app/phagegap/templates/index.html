@@ -1,0 +1,281 @@
+<!doctype html>
+<!--
+PhageGap
+AUTHOR: Simon Hackl
+CONTACT: simon.hackl@uni-tuebingen.de
+
+LICENSE
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+-->
+<html>
+	<head>
+		<title>PhageGap</title>
+		<!-- Provide meta information about the application. -->
+		<meta charset="utf-8" />
+		<meta name="csrf-token" content="{{ csrf_token }}" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta
+			name="description"
+			content="PhageGAP: Prediction of phage protein function using protein language models"
+		/>
+		<meta name="author" content="Simon Hackl" />
+		<!-- Definition of stylesheets to use in the application. -->
+	<link
+		rel="icon"
+		href="{{url_for('static', filename='resources/media/icon_512.png')}}"
+	/>
+	<link 
+		rel="stylesheet"
+		href="https://cdn.metroui.org.ua/5.1.20/metro.css"
+	/>
+	<link
+		rel="stylesheet"
+		href="{{url_for('static', filename='css/styles.css')}}"
+	/>
+	<link
+		rel="stylesheet"
+		href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css"
+	/>
+	<!-- Definition of java script files to use in the application. -->
+	<script
+	 	src="https://code.jquery.com/jquery-4.0.0.min.js"
+		integrity="sha256-OaVG6prZf4v69dPg6PhVattBXkcOWQB62pdZ3ORyrao="
+		crossorigin="anonymous">
+	</script>
+	<script
+		src="https://cdn.metroui.org.ua/5.1.20/metro.js">
+	</script>
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.11.0/axios.min.js"
+	></script>
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.js"
+	></script>
+	<script
+		src="https://cdn.jsdelivr.net/npm/echarts@6.1.0/dist/echarts.min.js"
+	></script>
+	<script
+		src="https://3Dmol.org/build/3Dmol-min.js"
+	></script>
+	<script
+		src="https://cdn.jsdelivr.net/npm/arquero@latest"
+	></script>
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+	></script>
+	</head>
+	<body>
+		<ul data-role="materialtabs">
+			<li class="active">
+				<a href="#home"><span class="phagegap-logo-text">PhageGap</span></a>
+			</li>
+			<li id="classification-tab" disabled>
+				<a href="#classification">Function Classification</a>
+			</li>
+			<li>
+				<a href="#about">Help and Information</a>
+			</li>
+		</ul>
+
+		<!-- Index page of the web application. -->
+		<div id="home">
+			<div class="grid">
+				<div class="row">
+					<div class="cell-3" style="display: flex; align-items: center; justify-content: center;">
+						<img
+							src="{{url_for('static', filename='resources/media/logo_1024.png')}}"
+							alt="The PhageGap logo"
+							style="width: 80%; height: auto; object-fit: contain;"
+						/>
+					</div>
+					<div class="cell-8">
+						<div class="hero">
+							<h1>Phage Protein Function Prediction</h1>
+							<p class="text-just">
+								<code>PhageGap</code> provides seamless access to pretrained protein language models to
+								classify unknown phage proteins into hierarchical functional categories and interactive
+								visualization using embeddings and genomic contextualization.
+							</p>
+							<button class="button">Explore the phage protein landscape</button>
+							<button class="button">Example</button>
+						</div>
+					</div>
+				</div>
+				<hr />
+			</div>
+		</div>
+
+		<!-- UI to start functional classification. -->
+		<div id="classification" class="pl-4 pr-4">
+			<div class="grid">
+
+				<!-- Toolbar. -->
+				<div class="row no-gap mt-2">
+					<div class="cell-12">
+						<button id="data-input-toggle" class="small"><i class="fa-solid fa-caret-down"></i> Data Input</button>
+						<button id="toolbar-genomic-context-button" class="small ml-1">
+							<i class="fa-solid fa-dna"></i> Add Genomic Context
+						</button>
+						<button id="toolbar-maximize-structure-button" class="small ml-1">
+							<i class="fa-solid fa-picture-in-picture"></i> Maximize Structure View
+						</button>
+						<button id="toolbar-screenshot-button" class="small ml-1">
+							<i class="fa-solid fa-camera"></i> Screenshot
+						</button>
+						<button id="toolbar-download-results-button" class="small ml-1 dropdown-toggle">
+							<i class="fa-solid fa-download"></i> Download Results
+						</button>
+						<button id="toolbar-download-session-button" class="small ml-1">
+							<i class="fa-solid fa-download"></i> Download Session
+						</button>
+					</div>
+				</div>
+				
+				<!-- Input forms. -->
+				<div id="data-input" data-role="collapse" data-duration=200 data-toggle-element="#data-input-toggle">
+					<!-- Input forms -->
+					<div class="row no-gap">
+						<div class="cell-9">
+							<div class="card">
+								<div class="card-header">
+									<span class="label">Provide Protein Sequence(s) in FASTA Format via Text and/or File Input</span>
+								</div>
+								<div class="card-content centered mb-3 mt-3">
+									<textarea id="data-input-text" data-role="textarea" placeholder=">P03706 Endolysin OS=Escherichia phage lambda
+MVEINNQRKAFLDMLAWSEGTDNGRQKTRNHGYDVIVGGELFTDYSDHPRKLVTLNPKLK
+STGAGRYQLLSRWWDAYRKQLGLKDFSPKSQDAVALQQIKERGALPMIDRGDIRQAIDRC
+SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
+									&nbsp;
+									<b class="ml-2 mr-2">and/or</b>
+									&nbsp;
+									<input id="data-input-file" type="file" data-button-title="Choose File" data-role="file" />
+								</div>
+								<div class="card-footer">
+									<button id="input-submit-button" class="flat-button small styled-button"><i class="fa-solid fa-upload"></i> Start Function Classification</button>
+									&nbsp;
+									<button id="session-reload-button" class="flat-button small styled-button"><i class="fa-solid fa-upload"></i> Reload Session</button>
+								</div>
+							</div>
+						</div>
+						<div class="cell-3">
+							<div class="card ml-2">
+								<div class="card-content bg-light">
+									<p class="reduce-2 text-just">
+										&bull; <b>Input must be in FASTA format.</b> Line length is unrestricted; ambiguous amino acids are converted to <code>X</code>.
+										The first header field after <code>&gt;</code> is used as the protein ID; remaining header text is treated as description.
+										Text and file input are combined.
+										<br/>
+										&bull; Optional <b>Genomic Context</b> can be added from the toolbar by providing a GFF file.
+										FASTA and GFF protein IDs must match.
+										<br/>
+										&bull; <code>Start Function Classification</code> predicts functional categories and nearest neighbors.
+										Results are added to the <b>Global Embedding Landscape</b> as <em>User Data</em> (<b>○</b>).
+										Additional submissions are appended to existing results.
+										<br/>
+										&bull; Results table/session can be downloaded from the toolbar and restored using <code>Reload Session</code>.
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<hr style="margin: 5px;"/>
+				
+				<div id="screenshot-area">
+					<!-- Embedding landscape chart. -->
+					<div class="row gap-1">
+						<div id="embedding-landscape-chart-cell" class="cell-9">
+							<span class="label">Global Embedding Landscape</span>
+							<div id="selection-info-container" class="mr-4 float-right">
+								<span id="selection-info-label" class="reduce-2"></span>
+								<button id="selection-clear-button" class="mini outline p-1"><i class="fa-solid fa-x"></i></button>
+							</div>
+							<div id="embedding-landscape-chart-container" data-role="resizer"></div>
+						</div>
+						<div id="structure-view-cell" class="cell-3">
+							<span id="structure-view-label" class="label" minimized>Function Prediction and Nearest Neighbor Structure</span>
+							<div class="grid">
+								<div class="row gap-1">
+									<div id="category-probabilities-chart-container" data-role="resizer">
+									</div>
+								</div>
+								<div class="row no-gap">
+									<p id="structure-view-info" class="p-2"></p>
+									<div id="structure-view-container" data-role="resizer">
+									</div>	
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Sequence alignment chart. -->
+					<div class="row gap-1">
+						<div class="cell-12">
+							<span class="label">Nearest Neighbor Sequence Alignment
+								<code class="reduce-3 ml-2 va-middle">
+									<i class="fa-solid fa-square" style="color: #4477BB"></i>&nbsp;Match&nbsp;
+									<i class="fa-solid fa-square" style="color: #CC4466"></i>&nbsp;Mismatch&nbsp;
+									<i class="fa-solid fa-square" style="color: #EEEEBB"></i>&nbsp;Insertion&nbsp;
+									<i class="fa-solid fa-square" style="color: #EEBBDD"></i>&nbsp;Deletion
+								</code>
+							</span>
+							<div id="sequence-alignment-chart-container"></div>
+						</div>
+					</div>
+
+					<!-- Genomic context chart. -->
+					<div class="row gap-1">
+						<div class="cell-12">
+							<span class="label">Genomic Context</span>
+							<div id="genomic-context-chart-container"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- UI for help and about information. -->
+		<div id="about">
+			<div class="container-fluid">
+				<div class="row">
+					<!-- Sticky navigation. -->
+					<aside class="cell-lg-3 cell-md-4 cell-sm-12">
+						<nav class="about-nav">
+							<h3 class="mb-3">Index</h3>
+							<ul id="about-nav-index" class="h-auto">
+								<!-- Is filled automatically by the js/main.js:indexAbout() function. -->
+							</ul>
+						</nav>
+					</aside>
+					<!-- About content. -->
+					<main class="cell-lg-9 cell-md-8 cell-sm-12">
+						<article class="about-content">
+							{% include "about/descriptions.html" %}
+							<hr style="margin-bottom: 4rem;" />
+							{% include "about/usage.html" %}
+							<hr style="margin-bottom: 4rem;" />
+							{% include "about/contact.html" %}
+							<hr style="margin-bottom: 4rem;" />
+							{% include "about/legal.html" %}
+						</article>
+					</main>
+				</div>
+			</div>
+		</div>
+		<script type="module">
+			import { initApp } from "{{url_for('static', filename='js/main.js')}}";
+
+			// Initialize the application after the page has loaded.
+			window.onload = initApp;
+		</script>
+	</body>
+</html>
