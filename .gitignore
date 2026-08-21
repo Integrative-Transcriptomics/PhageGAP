@@ -1,5 +1,6 @@
 classifier/images/*
 classifier/models/*
+app/phagegap/static/resources/secrets/*
 secrets/*
 .vscode
 .local
