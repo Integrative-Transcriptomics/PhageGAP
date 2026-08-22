@@ -1,23 +1,42 @@
+<section id="about-phagegap" class="about-section">
+	<div style="display: flex; align-items: center; justify-content: center;">
+		<img
+			src="{{url_for('static', filename='resources/media/logo_512.png')}}"
+			alt="The PhageGap logo"
+			style="width: 20%; height: auto; object-fit: contain;"
+		/>
+	</div>
+	<p>With PhageGAP we provide:</p>
+	<ul>
+		<li>an easy-to-use, free platform that predicts curated functional classes for phage proteins using protein language model embeddings.</li>
+		<li>confidence-aware, interactive, visual exploration of single-protein and whole-proteome analyses.</li>
+		<li>improved functional inference beyond direct sequence-homology transfer baselines.</li>
+	</ul>
+</section>
+
 <section id="usage" class="about-section">
 	<h1>How to use PhageGAP</h1>
 
-	<h2>Quick start</h2>
+	<h2>Quick Start</h2>
 	<ol>
 		<li>Paste protein FASTA text and/or upload a FASTA file.</li>
 		<li>Click <code>Function Classification</code>.</li>
-		<li>Click a <code>User Data</code> point in the <code>Global Embedding Landscape</code> to inspect predictions, nearest-neighbor alignment, and structure.</li>
+		<li>Click a <code>User Data</code> point in the <code>Global Embedding Landscape</code> to inspect category predictions, nearest-neighbor alignment, and structure.</li>
 		<li>Optionally add genomic context from a GFF file.</li>
 	</ol>
 </section>
 
 <section id="provide-protein-sequences" class="about-section">
-	<h2>1) Provide protein sequences</h2>
-	<p>You can submit sequence data by text input, file upload, or both together. PhageGAP combines both inputs into one analysis request.</p>
+	<h2>1) Provide Protein Sequences</h2>
+	<p>
+		Enter protein sequences directly or upload a FASTA file. If both are provided, the sequences are combined into one submission.
+	</p>
 	<ul>
-		<li>Input must contain valid FASTA records.</li>
-		<li>The first token after <code>&gt;</code> is used as <code>protein_ID</code>.</li>
-		<li>The full FASTA header line is kept as description text.</li>
-		<li>Use unique protein IDs. Duplicate IDs in one submission keep only the last record; IDs already loaded in the current session are not added again.</li>
+		<li>Protein sequences must be provided in FASTA format.</li>
+		<li>The first token after <code>&gt;</code> is used as the protein ID; the remaining header text is used as its description.</li>
+		<li>Sequence line length is not restricted.</li>
+		<li>Ambiguous amino acids are accepted and converted to <code>X</code>.</li>
+		<li>Use unique protein IDs to avoid ambiguous results.</li>
 	</ul>
 	<pre><code>&gt;prot_001 putative capsid protein
 MNNR...
@@ -26,49 +45,92 @@ MDSK...</code></pre>
 </section>
 
 <section id="run-analysis" class="about-section">
-	<h2>2) Run the analysis</h2>
-	<p>Click <code>Function Classification</code> to submit your proteins. New results are appended to your current session and shown as <code>User Data</code> in the landscape view.</p>
-	<p class="remark"><b>Important:</b> Classification and GFF uploads are rate-limited. If you submit again too quickly, wait and retry.</p>
+	<h2>2) Run Function Classification</h2>
+	<p>
+		Click <code>Function Classification</code> to analyze the submitted proteins.
+		Results are added to the current session and displayed as <code>User Data</code> in the
+		<code>Global Embedding Landscape</code>.
+	</p>
+	<div class="remark info">
+		<ul>
+			<li>
+				You must accept the cookie consent before Function Classification is enabled.
+			</li>
+			<li>
+				Submitted protein sequences are processed for analysis and are not persistently stored by PhageGAP.
+			</li>
+			<li>
+				<b>Classification requests are rate-limited.</b> If you submit again too quickly, wait and retry. If you experience rate or file size limits, please contact the listed maintainer.
+			</li>
+		</ul>
+	</div>
+	<!--<span class="collapse-toggle c-pointer"><i class="fa-solid fa-caret-down"></i> More Details</span>
+	<div data-role="collapse" data-collapsed="true" class="reduce-2">
+		<p>
+			Submitted protein sequences will be transmitted to our server and fed into ProtT5 to produce embeddings.
+			Subsequently, a pre-trained CNN model will predict a probability for each curated functional category from those embeddings.
+			The top three predicted categories and their probabilities are reported.
+			The embeddings are PCA-transformed and used to find the nearest neighbor reference protein in the PCA space.
+			The three nearest neighbors from PCA space are used to compute a weighted (wrt. PCA distance) average t-SNE coordinates for the selected protein. These coordinates are then displayed in the <code>Global Embedding Landscape</code> view.
+		</p>
+	</div>-->
 </section>
 
 <section id="explore-results" class="about-section">
-	<h2>3) Explore the results</h2>
+	<h2>3) Explore the Results</h2>
+	<p>
+		The <code>Global Embedding Landscape</code> provides an overview of your submitted proteins and the reference proteins used by PhageGAP.
+	</p>
 	<ul>
-		<li><b>Global Embedding Landscape:</b> shows reference proteins by category and your submitted proteins as <code>User Data</code>.</li>
-		<li><b>Function Prediction and Nearest Neighbor Structure:</b> top predictions (<code>top1</code>, <code>top2</code>, <code>top3</code>) with probabilities, plus nearest-neighbor structure.</li>
-		<li><b>Nearest Neighbor Sequence Alignment:</b> aligned residues for the selected protein and its nearest neighbor.</li>
-		<li><b>Selection tools:</b> clear selection, zoom the landscape, or maximize the structure panel.</li>
+		<li>Reference proteins are colored according to their functional categories.</li>
+		<li>Submitted proteins are displayed as "User Data" with an increased symbol size and black highlighting.</li>
+		<li>Hover over a <code>User Data</code> point to see its protein ID, highest-ranked predicted category, and nearest neighbor protein.</li>
+		<li>Hover over a reference point to see its functional category and available metadata.</li>
+		<li>Use the <code>Zoom</code><code>Zoom Reset</code> tool to select and enlarge a region of the landscape.</li>
 	</ul>
-	<p>Click any <code>User Data</code> point to update all linked views.</p>
+	<p>Click any <code>User Data</code> point to update linked views:</p>
+	<ul>
+		<li>A line is drawn from the selected protein to its nearest neighbor reference protein.</li>
+		<li><code>Function Prediction and Nearest Neighbor Structure</code> shows the three highest-ranked functional categories and their probabilities together with the available structure of the nearest-neighbor protein (including mean pLDDT abd predicted TM-score).</li>
+		<li>Use <code>Maximize Structure View</code> to enlarge the structure visualization and reduce the prominence of the function-prediction panel.</li>
+		<li>The <code>Nearest Neighbor Sequence Alignment</code> shows aligned residues for the selected protein and its nearest neighbor.</li>
+		<ul>
+			<li>The coloring of the sequence alignment is linked to the structure view.</li>
+			<li>Use the zoom control above the alignment to inspect individual regions in more detail.</li>
+		</ul>
+	</ul>
+	<p class="remark info">There may not be a structure available for all reference proteins.</p>
 </section>
 
 <section id="add-genomic-context" class="about-section">
-	<h2>4) Add genomic context</h2>
-	<p>Use <code>Add Genomic Context</code> in the toolbar to upload a <code>.gff</code> or <code>.gff3</code> file.</p>
+	<h2>4) Add Genomic Context</h2>
+	<p>
+		Use <code>Add Genomic Context</code> in the toolbar to upload a <a href="https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md" target="_blank">Generic Feature Format Version 3</a> (<code>.gff</code> or <code>.gff3</code>) file.
+		CDS features are displayed by genomic position and strand.
+	</p>
 	<ul>
-		<li>Only <code>CDS</code> features are used.</li>
-		<li>Features should provide standard 9-column GFF records with <code>key=value</code> attributes.</li>
-		<li>For linking to submitted proteins, the GFF <code>Name</code> attribute must match FASTA protein IDs.</li>
+		<li>Only <code>CDS</code> features are used. Features should provide standard 9-column GFF records with <code>key=value</code> attributes.</li>
+		<li>The GFF <code>Name</code> attribute must match the corresponding FASTA protein ID to link a CDS to a submitted protein.</li>
+		<li>
+			Matched CDS features are colored according to their predicted functional category.
+			Selecting a linked protein focuses the genomic-context view on its local neighborhood.
+		</li>
 	</ul>
-	<p>When IDs match, predicted categories are shown on genomic features and selection in the landscape can zoom to local genomic neighborhoods.</p>
 </section>
 
 <section id="save-restore-export" class="about-section">
-	<h2>5) Save, restore, or export</h2>
+	<h2>5) Save-and-Restore or Export</h2>
 	<ul>
-		<li><code>Download Results</code>: exports current user results as TSV (<code>phagegap-results-YYYY-MM-DD.tsv</code>).</li>
-		<li><code>Download Session</code>: exports selected protein, user results, and genomic features as compressed JSON (<code>.json.gz</code>).</li>
-		<li><code>Reload Session</code>: restores a saved session file (<code>.gz</code> / <code>.json.gz</code>).</li>
-		<li><code>Screenshot</code>: saves a PNG image of the current analysis panels.</li>
+		<li><code>Download Results</code>: Exports your results as TSV (<code>phagegap-results-YYYY-MM-DD.tsv</code>).</li>
+		<li><code>Download Session</code>: Exports your results, selection, and genomic features as compressed JSON (<code>.json.gz</code>).</li>
+		<li><code>Reload Session</code>: Restores a saved session file (<code>.gz</code> / <code>.json.gz</code>).</li>
+		<li><code>Screenshot</code>: Saves a PNG image of the current analysis panels.</li>
 	</ul>
 </section>
 
-<section id="usage-notes" class="about-section">
-	<h2>Tips and important notes</h2>
-	<ul>
-		<li>You must accept the cookie consent banner before API-backed features are enabled.</li>
-		<li>At least one valid FASTA record is required.</li>
-		<li>Large requests may fail (server request size limit is approximately 500 KB).</li>
-	</ul>
-	<p>For interpretation guidance, see <a href="#results-and-terms">Results and terms</a>.</p>
-</section>
+<!--<section id="functional-categories" class="about-section">
+	<h1>Functional Categories</h1>
+	<p>
+		We will provide a curated list of functional categories and their descriptions soon.
+	</p>
+</section>-->

@@ -97,16 +97,21 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 							style="width: 80%; height: auto; object-fit: contain;"
 						/>
 					</div>
+
 					<div class="cell-8">
 						<div class="hero">
 							<h1>Phage Protein Function Prediction</h1>
+
 							<p class="text-just">
-								<code>PhageGap</code> provides seamless access to pretrained protein language models to
-								classify unknown phage proteins into hierarchical functional categories and interactive
-								visualization using embeddings and genomic contextualization.
+								<code>PhageGap</code> uses protein language models to predict functional categories
+								for phage proteins and explore their relationships within an interactive protein
+								embedding landscape.
 							</p>
-							<button class="button">Explore the phage protein landscape</button>
-							<button class="button">Example</button>
+
+							<p class="text-just">
+								Inspect predictions alongside nearest-neighbor proteins, sequence alignments,
+								structural information, and optional genomic context.
+							</p>
 						</div>
 					</div>
 				</div>
@@ -260,8 +265,6 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 					<!-- About content. -->
 					<main class="cell-lg-9 cell-md-8 cell-sm-12">
 						<article class="about-content">
-							{% include "about/descriptions.html" %}
-							<hr style="margin-bottom: 4rem;" />
 							{% include "about/usage.html" %}
 							<hr style="margin-bottom: 4rem;" />
 							{% include "about/contact.html" %}
