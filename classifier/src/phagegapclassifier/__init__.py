@@ -74,7 +74,7 @@ def select_device(device: str) -> torch.device:
 	"""
 	if device == "cuda":
 		if torch.cuda.is_available():
-			logger.info(f"CUDA is available; using device {os.environ('CUDA_VISIBLE_DEVICES')} for computations.")
+			logger.info(f"CUDA is available; using device {os.getenv('CUDA_VISIBLE_DEVICES')} for computations.")
 			return torch.device("cuda")
 		else:
 			logger.warning("CUDA was requested but is unavailable; using CPU for computations.")
