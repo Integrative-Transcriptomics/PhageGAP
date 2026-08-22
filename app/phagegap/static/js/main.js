@@ -598,14 +598,17 @@ async function restoreSession() {
 		const sessionData = JSON.parse(content);
 		if (typeof sessionData.features == 'string') {
 			sessionData.features = JSON.parse(sessionData.features);
-			processUserData(sessionData.userdata);
+			console.log(sessionData.features);
+			processFeatures(sessionData.features);
 		}
 		if (typeof sessionData.userdata == 'string') {
 			sessionData.userdata = JSON.parse(sessionData.userdata);
-			processFeatures(sessionData.features);
+			console.log(sessionData.userdata);
+			processUserData(sessionData.userdata);
 		}
 
-		if (sessionData.selected != null) {
+		// Check if the value of selected in the session data is valid and exists in the user-submitted data table.
+		if (sessionData.selected && userdataTable && userdataTable.entry(sessionData.selected) !== null) {
 			selected.setValue(sessionData.selected);
 		} else {
 			categoryProbabilities.state.setValue("Click on a User Data point to view function predictions.");
