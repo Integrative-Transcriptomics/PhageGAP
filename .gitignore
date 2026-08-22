@@ -1,8 +1,12 @@
 classifier/images/*
 classifier/models/*
 classifier/src/deprecated/
+phagegap_*.tar.gz
+
 app/phagegap/static/resources/secrets/*
+app/phagegap/static/resources/data/*
 app/phagegap/__pycache__/*
+
 secrets/*
 .vscode
 .local
