@@ -118,6 +118,10 @@ def serve_nearest_neighbor_information():
 			cif_content = Path(app.static_folder).joinpath("resources/data/emulate_nn_structure.cif").read_text(encoding="utf-8")
 			response_dict = {"structure_data": cif_content, "structure_plddt_mean": 0.42, "structure_ptm": 0.42}
 		else:
+			# Check if the PhageGap classifier service is accessible before making the request.
+			if not app.extensions["classifier_url"]:
+				return "PhageGap classifier service is not accessible. Please try again later.", 503
+			
 			# Request the structure of the nearest neighbor protein from the PhageGap classifier service.
 			response = requests.get(
 				f"{app.extensions['classifier_url']}/structure", {"protein_id": nn_protein_id},
@@ -148,7 +152,7 @@ def serve_nearest_neighbor_information():
 
 
 @app.route("/api/gff", methods=["POST"])
-@limiter.limit("2 per minute")  # Limit to 50 requests per minute per IP address.
+@limiter.limit("10 per minute")  # Limit to 50 requests per minute per IP address.
 def process_gff():
 	"""Processes a GFF file uploaded by the user and returns the parsed features as JSON.
 
@@ -168,7 +172,7 @@ def process_gff():
 
 
 @app.route("/api/classifier/predict", methods=["POST"])
-@limiter.limit("1 per minute")  # Limit to 50 requests per minute per IP address.
+@limiter.limit("10 per minute")  # Limit to 50 requests per minute per IP address.
 def serve_classifier_prediction():
 	"""Serves the prediction results from the PhageGap classifier for a given set of protein sequences.
 
@@ -248,6 +252,10 @@ def serve_classifier_prediction():
 				record["nearest_neighbor_ID"] = sample.iloc[0]["protein_ID"]
 				record["nearest_neighbor_distance"] = 42
 		else :
+			# Check if the PhageGap classifier service is accessible before making the request.
+			if not app.extensions["classifier_url"]:
+				return "PhageGap classifier service is not accessible. Please try again later.", 503
+			
 			# Forward the original FASTA text to the classifier apptainer.
 			response = requests.post(
 				f"{app.extensions['classifier_url']}/predict",
