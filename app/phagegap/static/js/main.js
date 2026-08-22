@@ -598,12 +598,10 @@ async function restoreSession() {
 		const sessionData = JSON.parse(content);
 		if (typeof sessionData.features == 'string') {
 			sessionData.features = JSON.parse(sessionData.features);
-			console.log(sessionData.features);
 			processFeatures(sessionData.features);
 		}
 		if (typeof sessionData.userdata == 'string') {
 			sessionData.userdata = JSON.parse(sessionData.userdata);
-			console.log(sessionData.userdata);
 			processUserData(sessionData.userdata);
 		}
 

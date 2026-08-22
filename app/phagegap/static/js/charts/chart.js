@@ -22,7 +22,6 @@ export class Chart {
 		this.state = new Observable(null);
 		this.state.onChange(() => {
 			let value = this.state.getValue();
-			console.log("Chart state changed: ", value);
 			if (value == null) {
 				this.setActive();
 			} else {

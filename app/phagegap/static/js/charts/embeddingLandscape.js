@@ -197,7 +197,6 @@ export class EmbeddingLandscape extends Chart {
 	 * @param {object} clicked An entry from the `userdataTable` corresponding to the clicked data point in the embedding landscape chart.
 	 */
 	highlight(clicked) {
-		console.log(clicked);
 		const nearestNeighborPoint = metadataTable.entry(
 			clicked.nearest_neighbor_ID,
 		);

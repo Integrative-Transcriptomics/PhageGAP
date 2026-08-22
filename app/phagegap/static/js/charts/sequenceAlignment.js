@@ -109,12 +109,6 @@ export class SequenceAlignment extends Chart {
 		this.echart.clear();
 	}
 
-	observeZoom() {
-		this.echart.on("dataZoom", (params) => {
-			console.log(params);
-		});
-	}
-
 	#state(charA, charB) {
 		if (charA === charB) {
 			return ["M", "M"];
