@@ -1,5 +1,5 @@
 import { Chart } from "./chart.js";
-import { userdataTable, selected } from "../main.js";
+import { userdataTable, selectedId } from "../main.js";
 import { displayNotification } from "../utility.js";
 import { CATEGORY_COLORS, SUBCATEGORY_MAP, NA_COLOR } from "../constants.js";
 
@@ -132,7 +132,7 @@ export class GenomicContext extends Chart {
 	zoom() {
 		if (!this.echart) return;
 		if (!featureTable) return;
-		let selectedProteinID = selected.getValue();
+		let selectedProteinID = selectedId.getValue();
 
 		if (selectedProteinID == null) {
 			// Reset zoom, if selected is null.
@@ -179,7 +179,7 @@ export class GenomicContext extends Chart {
 		const height = api.size([0, 1])[1] * 0.6;
 		const width = end[0] - start[0];
 		const label = api.value(3);
-		const isSelected = selected.getValue() === label; // Check if the current feature is the selected one.
+		const isSelected = selectedId.getValue() === label; // Check if the current feature is the selected one.
 
 		// Construct the shape of the feature as a rectangle and clip it to the chart's coordinate system to ensure it doesn't overflow.
 		const shape = echarts.graphic.clipRectByRect(

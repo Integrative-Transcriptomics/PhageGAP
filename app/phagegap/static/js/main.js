@@ -54,14 +54,20 @@ export var sequenceAlignment = null;
 /**
  * The ID of the currently selected protein in the embedding landscape chart.
  */
-export var selected = new Observable(null);
+export var selectedId = new Observable(null);
+
+/**
+ * The ID of the currently selected nearest neighbor protein.
+ */
+export var nnId = new Observable(null);
 
 /**
  * The version of the PhageGAP application.
  */
 const VERSION = "1.0.0";
 
-selected.onChange(handleSelectionChange); // Set up a listener to propagate click events when the selected protein changes.
+selectedId.onChange(handleSelectionChange); // Set up a listener to propagate click events when the selected protein changes.
+nnId.onChange(handleNearestNeighborChange); // Set up a listener to propagate click events when the nearest neighbor protein changes.
 
 /**
  * Main initialization function.
@@ -105,14 +111,16 @@ export function initApp() {
 	embeddingLandscape.echart.on("click", (params) => {
 		if (params.seriesName === "User Data") {
 			// Update the selected protein when a "User Data" point is clicked. The observer triggers the propagation of the click event to the appropriate handlers.
-			selected.setValue(params.data.name);
+			selectedId.setValue(params.data.name);
+		} else {
+			console.log(params);
 		}
 	});
 	genomicContext.echart.on("click", (params) => {
 		let protein_id = params.data.name;
 		// Check if the clicked protein ID exists in the user-submitted data table before updating the selected protein.
 		if (userdataTable && userdataTable.entry(protein_id) !== null) {
-			selected.setValue(protein_id);
+			selectedId.setValue(protein_id);
 		}
 	});
 
@@ -130,7 +138,7 @@ export function initApp() {
 	document.getElementById("toolbar-download-session-button").onclick =
 		downloadSession;
 	document.getElementById("selection-clear-button").onclick = () => {
-		selected.setValue(null);
+		selectedId.setValue(null);
 	};
 
 	// Promise for the presence of the `phagegap_consent` cookie.
@@ -178,11 +186,12 @@ function enableClassificationTab() {
 }
 
 /**
- * Propagates a click event on user-submitted data from the embedding landscape chart to the appropriate handlers.
+ * Handles changes in the selected protein ID, updating the relevant charts and UI elements accordingly.
  */
 function handleSelectionChange() {
-	if (selected.getValue() !== null) {
-		const currentSelection = userdataTable.entry(selected.getValue());
+	if (!userdataTable) return;
+	if (selectedId.getValue() !== null) {
+		const currentSelection = userdataTable.entry(selectedId.getValue());
 
 		// Show the category probabilities for the clicked protein in the category probabilities chart.
 		if (categoryProbabilities && currentSelection) categoryProbabilities.show(currentSelection);
@@ -196,12 +205,12 @@ function handleSelectionChange() {
 		if (genomicContext && currentSelection) genomicContext.zoom();
 
 		// Set the nearest neighbor information to the first nearest neighbor of the clicked protein.
-		setNearestNeighborInfo(nearestNeighbors[currentSelection.protein_ID][0].protein_ID)
+		nnId.setValue(nearestNeighbors[currentSelection.protein_ID][0].protein_ID);
 
 		// Toggle display of the selection info container in the toolbar to show the currently selected protein.
 		document.getElementById("selection-info-container").style.display = "block";
 		document.getElementById("selection-info-label").innerHTML =
-			`Selected <code>${selected.getValue()}</code>`;
+			`Selected <code>${selectedId.getValue()}</code>`;
 	} else {
 		// If the selection is null (cleared), hide and clear respective UI elements and reset zoom.
 		categoryProbabilities.clear();
@@ -222,22 +231,21 @@ function handleSelectionChange() {
 }
 
 /**
- * Requests structure information for the a specified protein ID and propagates the information to the structure view
- * and sequence alignment chart as nearest neighbor information.
+ * Handles changes in the nearest neighbor protein ID, requesting structure information from the server and updating
+ * the structure view and sequence alignment chart accordingly.
  * 
  * Note: In principle, any valid protein ID can be used to request structure information, but in practice,
  * this function is intended to be used with the protein ID of one of the reported nearest neighbors of the
  * currently selected user-submitted data point.
- * 
- * @param {string} nnProteinId The protein ID of the nearest neighbor.
- * @returns 
  */
-function setNearestNeighborInfo(nnProteinId) {
+function handleNearestNeighborChange() {
 	if (!userdataTable) return;
-	if (selected.getValue() == null) return;
+	if (selectedId.getValue() == null) return;
+	if (nnId.getValue() == null) return;
 
 	// Extract current selection data.
-	const currentSelection = userdataTable.entry(selected.getValue());
+	const currentSelection = userdataTable.entry(selectedId.getValue());
+	let nnProteinId = nnId.getValue();
 
 	// Request structure data of the nearest neighbor protein from the server and update the structure view and alignment chart accordingly.
 	var formData = new FormData();
@@ -646,7 +654,7 @@ async function restoreSession() {
 
 		// Check if the value of selected in the session data is valid and exists in the user-submitted data table.
 		if (sessionData.selected && userdataTable && userdataTable.entry(sessionData.selected) !== null) {
-			selected.setValue(sessionData.selected);
+			selectedId.setValue(sessionData.selected);
 		} else {
 			categoryProbabilities.state.setValue("Click on a User Data point to view function predictions.");
 			sequenceAlignment.state.setValue("Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.");
@@ -705,7 +713,7 @@ function downloadSession() {
 	// Create a JSON object containing the session data.
 	const sessionJSON = JSON.stringify(
 		{
-			selected: selected.getValue(),
+			selected: selectedId.getValue(),
 			userdata: userdataRecords,
 			features: featureRecords,
 			time: new Date().toISOString(),
