@@ -159,7 +159,7 @@ export class GenomicContext extends Chart {
 
 	#formatTooltip(params) {
 		let d = params.data;
-		return `
+		let content = `
 			<div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">
 				<code>ID: ${d.name} | Locus Tag: ${d.locus_tag}</code>
 			</div>
@@ -169,6 +169,11 @@ export class GenomicContext extends Chart {
 			<strong>Product:</strong> ${d.product}<br/>
 			<strong>Predicted Category:</strong> ${d.category}
 		`;
+		if (d.category !== "Unknown") {
+			// TODO: Find better way to check if the feature is selectable.
+			content += `<br/><code>Click for more details.</code>`;
+		}
+		return content;
 	}
 
 	#render(params, api) {
