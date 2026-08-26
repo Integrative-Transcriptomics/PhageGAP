@@ -182,67 +182,21 @@ function enableClassificationTab() {
  */
 function handleSelectionChange() {
 	if (selected.getValue() !== null) {
-		const clicked = userdataTable.entry(selected.getValue());
+		const currentSelection = userdataTable.entry(selected.getValue());
 
 		// Show the category probabilities for the clicked protein in the category probabilities chart.
-		if (categoryProbabilities && clicked) categoryProbabilities.show(clicked);
+		if (categoryProbabilities && currentSelection) categoryProbabilities.show(currentSelection);
 		// Clear the loading state of the category probabilities chart.
 		categoryProbabilities.state.setValue(null);
 
 		// Highlight the nearest neighbor of the clicked "User Data" point in the embedding landscape chart.
-		if (embeddingLandscape && clicked) embeddingLandscape.highlight(clicked);
+		if (embeddingLandscape && currentSelection) embeddingLandscape.highlight(currentSelection);
 
 		// Zoom into the genomic context feature corresponding to the clicked point, if it exists.
-		if (genomicContext && clicked) genomicContext.zoom();
+		if (genomicContext && currentSelection) genomicContext.zoom();
 
-		// Request structure data of the nearest neighbor protein from the server and update the structure view and alignment chart accordingly.
-		var formData = new FormData();
-		formData.append("protein_seq", clicked.sequence);
-		axios
-			.post(`/api/classifier/nninfo`, formData, {
-				headers: {
-					"X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')
-						.content,
-				},
-				params: {
-					nn_protein_id: nearestNeighbors[clicked.protein_ID][0].protein_ID,
-				},
-			})
-			.then((response) => {
-				sequenceAlignment.fill(
-					response.data.sequence_alignment[0],
-					response.data.sequence_alignment[1],
-					clicked.nearest_neighbor_ID,
-					selected.getValue(),
-				);
-				// Clear the loading state of the sequence alignment chart.
-				sequenceAlignment.state.setValue(null);
-
-				structureView.clear(); // Clear the structure view before adding new content.
-				structureView.fill(response.data.structure_data, "cif"); // Add the protein structure to the structure view.
-				structureView.setInfo(
-					clicked.nearest_neighbor_ID,
-					response.data.structure_plddt_mean,
-					response.data.structure_ptm,
-				);
-			})
-			.catch((error) => {
-				// Display an error notification as state of the sequence alignment chart.
-				sequenceAlignment.state.setValue(
-					"Failed to retrieve sequence alignment and structure data. Please try another protein.",
-				);
-
-				console.error(error);
-				let message = error.message;
-				if (error.response.data) {
-					message += `<hr>${error.response.data}`;
-				}
-				util.displayNotification(
-					"Failed to retrieve nearest neighbor information: " + message,
-					"Error",
-					"warning",
-				);
-			});
+		// Set the nearest neighbor information to the first nearest neighbor of the clicked protein.
+		setNearestNeighborInfo(nearestNeighbors[currentSelection.protein_ID][0].protein_ID)
 
 		// Toggle display of the selection info container in the toolbar to show the currently selected protein.
 		document.getElementById("selection-info-container").style.display = "block";
@@ -265,6 +219,74 @@ function handleSelectionChange() {
 			"Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.",
 		);
 	}
+}
+
+/**
+ * Requests structure information for the a specified protein ID and propagates the information to the structure view
+ * and sequence alignment chart as nearest neighbor information.
+ * 
+ * Note: In principle, any valid protein ID can be used to request structure information, but in practice,
+ * this function is intended to be used with the protein ID of one of the reported nearest neighbors of the
+ * currently selected user-submitted data point.
+ * 
+ * @param {string} nnProteinId The protein ID of the nearest neighbor.
+ * @returns 
+ */
+function setNearestNeighborInfo(nnProteinId) {
+	if (!userdataTable) return;
+	if (selected.getValue() == null) return;
+
+	// Extract current selection data.
+	const currentSelection = userdataTable.entry(selected.getValue());
+
+	// Request structure data of the nearest neighbor protein from the server and update the structure view and alignment chart accordingly.
+	var formData = new FormData();
+	formData.append("protein_seq", currentSelection.sequence);
+	axios
+		.post(`/api/classifier/nninfo`, formData, {
+			headers: {
+				"X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')
+					.content,
+			},
+			params: {
+				nn_protein_id: nnProteinId,
+			},
+		})
+		.then((response) => {
+			sequenceAlignment.fill(
+				response.data.sequence_alignment[0],
+				response.data.sequence_alignment[1],
+				nnProteinId,
+				currentSelection.protein_ID,
+			);
+			// Clear the loading state of the sequence alignment chart.
+			sequenceAlignment.state.setValue(null);
+
+			structureView.clear(); // Clear the structure view before adding new content.
+			structureView.fill(response.data.structure_data, "cif"); // Add the protein structure to the structure view.
+			structureView.setInfo(
+				nnProteinId,
+				response.data.structure_plddt_mean,
+				response.data.structure_ptm,
+			);
+		})
+		.catch((error) => {
+			// Display an error notification as state of the sequence alignment chart.
+			sequenceAlignment.state.setValue(
+				"Failed to retrieve sequence alignment and structure data. Please try another protein.",
+			);
+
+			console.error(error);
+			let message = error.message;
+			if (error.response.data) {
+				message += `<hr>${error.response.data}`;
+			}
+			util.displayNotification(
+				"Failed to retrieve nearest neighbor information: " + message,
+				"Error",
+				"warning",
+			);
+		});
 }
 
 /**
