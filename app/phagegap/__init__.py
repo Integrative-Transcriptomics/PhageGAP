@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import logging
-import requests
 import secrets
 import os
-import atexit
 import pandas as pd
 from pathlib import Path
 from flask import Flask
-from apscheduler.schedulers.background import BackgroundScheduler
 
 
 # Initialize logging configuration.
@@ -19,7 +16,7 @@ logger = logging.getLogger(__name__)
 logger.debug("Initializing Flask app.")
 app = Flask(__name__)
 
-# Only for debugging purposes: Set emulate = True to emulate the behavior of the PhageGap classifier.
+# Only for debugging purposes: Set emulate = True to emulate the behavior of the PhageGAP classifier.
 try :
 	app.extensions["emulate"] = int(os.getenv("EMULATE", 0)) == 1
 except ValueError:
@@ -66,65 +63,31 @@ app.config["SECRET_KEY"] = api_key if api_key is not None else secrets.token_hex
 # Load metadata from static resources into a dictionary and validate its contents.
 logger.debug("Loading metadata from static resources.")
 metadata_path = Path(app.static_folder).joinpath("resources/data/metadata.tsv.gz")
-meta_df = pd.read_csv(metadata_path, sep="\t", compression="gzip")
+metadata_df = pd.read_csv(metadata_path, sep="\t", compression="gzip")
 METADATA_COLUMNS = ["protein_ID", "locus_tag", "organism", "phage_ID", "product", "subcategory", "category", "tsne_1", "tsne_2"]
-if not all(col in meta_df.columns for col in METADATA_COLUMNS):
-	raise RuntimeError(f"Metadata file {str(metadata_path)} is missing required columns. Expected columns: {METADATA_COLUMNS}. Found columns: {list(meta_df.columns)}.")
-app.extensions["metadata"] = meta_df
+if not all(col in metadata_df.columns for col in METADATA_COLUMNS):
+	raise RuntimeError(f"Metadata file {str(metadata_path)} is missing required columns. Expected columns: {METADATA_COLUMNS}. Found columns: {list(metadata_df.columns)}.")
+app.extensions["metadata"] = metadata_df
+
+# Load structure information from static resources into a DataFrame and validate its contents.
+logger.debug("Loading structure information from static resources.")
+structure_info_path = Path(app.static_folder).joinpath("resources/data/structures.tsv.gz")
+if structure_info_path is None:
+	logger.warning("Structure information path is not specified; the application will not provide structure information.")
+	structure_info_df = None
+else:
+	structure_info_df = pd.read_csv(structure_info_path, delimiter="\t", compression="gzip")
+	for col in ["protein_ID", "structure_path", "structure_plddt_mean", "structure_ptm"]:
+		if col not in structure_info_df.columns:
+			raise RuntimeError(f"Missing required column '{col}' in structure information file.")
+	structure_info_df.set_index("protein_ID", inplace=True)
+app.extensions["structure_info"] = structure_info_df
 
 # Load API routes.
 logger.debug("Loading API routes.")
 from phagegap import api
 
-# Start CRON job to test classifier accessibility, if not emulating.
-# TODO: We might want to implement a more robust health check for the classifier service in the future.
-CLASSIFIER_URLS = [
-	"http://134.2.9.250:20101",
-	"http://134.2.9.251:20101"
-]
-app.extensions["classifier_url"] = False
-
-
-def checkClassifierURL():
-	""" Checks the accessibility of the PhageGap classifier service and updates the app extension accordingly.
-
-	This function is intended to be run as a scheduled job to periodically verify that the PhageGap classifier
-	service is reachable and operational. If the service is accessible, the URL of the first reachable instance
-	will be stored in the app extension for use in API requests. If none of the instances are reachable, an error
-	will be logged.
-	"""
-	if not app.extensions["emulate"]:
-		logger.debug("Testing accessibility of the PhageGap classifier service.")
-		for url in CLASSIFIER_URLS:
-			try:
-				response = requests.get(f"{url}/active", timeout=5)
-				if response.status_code == 200:
-					logger.debug(f"Successfully connected to PhageGap classifier at {url}.")
-					app.extensions["classifier_url"] = url
-					break
-			except requests.RequestException:
-				continue
-		else:
-			logger.error("Failed to access the PhageGap classifier. The service might be down or unreachable.")
-			app.extensions["classifier_url"] = False
-	else:
-		logger.debug("Emulating PhageGap classifier behavior. No actual requests will be sent to the classifier service.")
-		app.extensions["classifier_url"] = False
-
-
-checkClassifierURL()  # Initial check on startup.
-scheduler = BackgroundScheduler()
-scheduler.add_job(func=checkClassifierURL, trigger='interval', minutes=15)
-scheduler.start()
-
-# Shut down the scheduler when exiting the app.
-atexit.register(lambda: scheduler.shutdown())
-
 # Initialize SocketIO.
-# TODO: This has to be adjustes to allow communication with the PhageGap classifier.
+# TODO: This has to be adjustes to allow communication with the PhageGAP classifier.
 #from flask_socketio import SocketIO
 #socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
-
-if __name__ == "__main__":
-	app.run(host="0.0.0.0", port=5001)
-	#socketio.run(app)

@@ -6,10 +6,7 @@ from __future__ import annotations
 
 import logging
 import hmac
-import math
 import pandas as pd
-import numpy as np
-from scipy.special import softmax
 from flask import Blueprint, current_app, request, jsonify
 from phagegapclassifier.embed import preprocess_df, compute_embeddings
 from phagegapclassifier.pool import pool_embeddings
@@ -196,10 +193,12 @@ def _predict(sequence_text: str) -> tuple[pd.DataFrame, dict]:
 	for i, protein_id in enumerate(embed_protein_ids):
 		nearest_neighbors.setdefault(protein_id, [])
 		for _, nn_index in enumerate(nn_indices[i]):
+			tsne_coords = tsne["coords"][nn_index].tolist()
 			nearest_neighbor = {
 				"protein_ID": pca["ids"][nn_index],
 				"pca_distance": nn_pca_distances[i][_],
-				"tsne_coords": tsne["coords"][nn_index].tolist(),
+				"tsne_1": tsne_coords[0],
+				"tsne_2": tsne_coords[1],
 			}
 			nearest_neighbors[protein_id].append(nearest_neighbor)
 	
