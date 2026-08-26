@@ -1,6 +1,12 @@
 import { Chart } from "./chart.js";
 import { CATEGORY_COLORS, SUBCATEGORY_MAP, NA_COLOR } from "../constants.js";
-import { metadataTable, userdataTable, nearestNeighbors } from "../main.js";
+import {
+	metadataTable,
+	userdataTable,
+	nearestNeighbors,
+	selectedId,
+	nnId,
+} from "../main.js";
 import { displayNotification } from "../utility.js";
 
 /**
@@ -32,15 +38,16 @@ export class EmbeddingLandscape extends Chart {
 
 		// Prepare the series data for each category based on the metadata table.
 		var categorySeries = {};
-		for (const [category, entries] of metadataTable.groups("category")) {
-			categorySeries[category] = {
+		var metadataGroups = metadataTable.groups("category");
+		for (const c of Object.keys(CATEGORY_COLORS)) {
+			categorySeries[c] = {
 				type: "scatter",
-				name: category,
+				name: c,
 				symbolSize: 1,
 				itemStyle: {
-					color: CATEGORY_COLORS[category] || NA_COLOR,
+					color: CATEGORY_COLORS[c] || NA_COLOR,
 				},
-				data: entries.map((entry) => ({
+				data: metadataGroups.get(c).map((entry) => ({
 					name: entry.protein_ID,
 					value: [entry.tsne_1, entry.tsne_2],
 				})),
@@ -203,10 +210,7 @@ export class EmbeddingLandscape extends Chart {
 					coord: [nn_metadata.tsne_1, nn_metadata.tsne_2],
 					value: nn.pca_distance,
 					label: {
-						show: isFirst,
-						formatter: (params) => {
-							return params.name;
-						}
+						show: false,
 					},
 					emphasis: {
 						label: {
@@ -304,11 +308,19 @@ export class EmbeddingLandscape extends Chart {
 	 * @returns {string|undefined} The formatted tooltip content as an HTML string, or undefined if the tooltip should not be displayed.
 	 */
 	#formatTooltip(params) {
-		if (params.data === undefined || params.componentType !== "series") {
-			return;
-		}
+		if (params.data === undefined) return;
 		if (params.seriesName === "User Data") {
 			if (!userdataTable) return;
+
+			// Special handling for markLine tooltips to display nearest neighbor information.
+			if (params.componentType === "markLine") {
+				if (params.name !== nnId.getValue()) {
+					return `<small>Click to set nearest neighbor.</small>`;
+				} else {
+					return; // Display no tooltip if the nearest neighbor is already selected.
+				}
+			}
+
 			const info = userdataTable.entry(params.data.name);
 			const nearestNeighbor = nearestNeighbors[params.data.name][0];
 			var content = `<code>ID: ${params.data.name}</code><br>`;
@@ -319,7 +331,9 @@ export class EmbeddingLandscape extends Chart {
 			content += `<tr><td>Predicted Category:</td><td>${top1} › ${SUBCATEGORY_MAP[top1]} (${top1Prob}%)</td></tr>`;
 			content += `<tr><td>Nearest Neighbor:</td><td>${nearestNeighbor.protein_ID} d<sub>PCA</sub>=${nearestNeighbor.pca_distance.toFixed(2)}</td></tr>`;
 			content += `</table>`;
-			content += `<br><code>Click for more details!</code>`;
+			if (selectedId.getValue() !== params.data.name) {
+				content += `<br><code>Click for more details.</code>`;
+			}
 		} else {
 			if (!metadataTable) return;
 			const info = metadataTable.entry(params.data.name);

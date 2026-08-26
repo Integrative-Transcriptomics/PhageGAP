@@ -200,10 +200,14 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 					<div class="row gap-1">
 						<div id="embedding-landscape-chart-cell" class="cell-9">
 							<span class="label">Global Embedding Landscape</span>
-							<div id="selection-info-container" class="mr-4 float-right">
-								<span id="selection-info-label" class="reduce-2"></span>
-								<button id="selection-clear-button" class="mini outline p-1"><i class="fa-solid fa-x"></i></button>
-							</div>
+							<select id="protein-select" 
+									class="float-right small w-25"
+									data-role="select" data-clear-button="true"
+									data-filter="true" 
+									data-filter-placeholder="Search for protein ID..."
+									data-placeholder="No protein selected."
+									data-use-placeholder="true">
+							</select>
 							<div id="embedding-landscape-chart-container" data-role="resizer"></div>
 						</div>
 						<div id="structure-view-cell" class="cell-3">

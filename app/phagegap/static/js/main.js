@@ -110,17 +110,23 @@ export function initApp() {
 	// Initialize click handler for the embedding landscape and genomic context chart.
 	embeddingLandscape.echart.on("click", (params) => {
 		if (params.seriesName === "User Data") {
-			// Update the selected protein when a "User Data" point is clicked. The observer triggers the propagation of the click event to the appropriate handlers.
-			selectedId.setValue(params.data.name);
-		} else {
-			console.log(params);
+			if (params.componentType === "series") {
+				// Update the selected protein when a "User Data" point is clicked.
+				// The observer triggers the propagation of the click event to the appropriate handlers.
+				Metro.getPlugin("#protein-select", "select").val(params.data.name);
+			} else if (params.componentType === "markLine") {
+				// Update the nearest neighbor protein when a nearest neighbor line is clicked.
+				nnId.setValue(params.data.name);
+			} else {
+				return; // Ignore clicks on other components of the chart.
+			}
 		}
 	});
 	genomicContext.echart.on("click", (params) => {
 		let protein_id = params.data.name;
 		// Check if the clicked protein ID exists in the user-submitted data table before updating the selected protein.
 		if (userdataTable && userdataTable.entry(protein_id) !== null) {
-			selectedId.setValue(protein_id);
+			Metro.getPlugin("#protein-select", "select").val(protein_id);
 		}
 	});
 
@@ -137,10 +143,7 @@ export function initApp() {
 		downloadResults;
 	document.getElementById("toolbar-download-session-button").onclick =
 		downloadSession;
-	document.getElementById("selection-clear-button").onclick = () => {
-		selectedId.setValue(null);
-	};
-
+	
 	// Promise for the presence of the `phagegap_consent` cookie.
 	util.cookieDisclaimer().then(() => {
 		// Enable the "Function Classification" tab in the navigation bar.
@@ -194,12 +197,14 @@ function handleSelectionChange() {
 		const currentSelection = userdataTable.entry(selectedId.getValue());
 
 		// Show the category probabilities for the clicked protein in the category probabilities chart.
-		if (categoryProbabilities && currentSelection) categoryProbabilities.show(currentSelection);
+		if (categoryProbabilities && currentSelection)
+			categoryProbabilities.show(currentSelection);
 		// Clear the loading state of the category probabilities chart.
 		categoryProbabilities.state.setValue(null);
 
 		// Highlight the nearest neighbor of the clicked "User Data" point in the embedding landscape chart.
-		if (embeddingLandscape && currentSelection) embeddingLandscape.highlight(currentSelection);
+		if (embeddingLandscape && currentSelection)
+			embeddingLandscape.highlight(currentSelection);
 
 		// Zoom into the genomic context feature corresponding to the clicked point, if it exists.
 		if (genomicContext && currentSelection) genomicContext.zoom();
@@ -207,8 +212,8 @@ function handleSelectionChange() {
 		// Set the nearest neighbor information to the first nearest neighbor of the clicked protein.
 		nnId.setValue(nearestNeighbors[currentSelection.protein_ID][0].protein_ID);
 
-		// Toggle display of the selection info container in the toolbar to show the currently selected protein.
-		document.getElementById("selection-info-container").style.display = "block";
+		// Add information about the selected protein to the selection info container.
+		document.getElementById("selection-clear-button").style.display = "inline-block";
 		document.getElementById("selection-info-label").innerHTML =
 			`Selected <code>${selectedId.getValue()}</code>`;
 	} else {
@@ -218,15 +223,18 @@ function handleSelectionChange() {
 		genomicContext.zoom();
 		structureView.clear();
 		sequenceAlignment.clear();
-		document.getElementById("selection-info-container").style.display = "none";
-		document.getElementById("selection-info-label").innerHTML = "";
-		
+
 		categoryProbabilities.state.setValue(
 			"Click on a User Data point to view function predictions.",
 		);
 		sequenceAlignment.state.setValue(
 			"Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.",
 		);
+
+		// Reset information about the selected protein in the selection info container.
+		document.getElementById("selection-clear-button").style.display = "none";
+		document.getElementById("selection-info-label").innerHTML =
+			`No protein selected.`;
 	}
 }
 
@@ -555,6 +563,22 @@ function processUserData(data) {
 
 	// Initialize the user-data table with the received data.
 	promiseUserdataTable(data).then(() => {
+		// Update the selection search dropdown with protein IDs from the user-submitted data table.
+		const proteinSelectPlugin = Metro.getPlugin("#protein-select", "select");
+		proteinSelectPlugin.options.onChange = function (value) {
+			selectedId.setValue(value[0]); // Update the selected protein ID when a new option is selected from the dropdown.
+		};
+		proteinSelectPlugin.options.onClear = function (value) {
+			selectedId.setValue(null); // Clear the selected protein ID when the selection is cleared from the dropdown.
+		};
+		proteinSelectPlugin.reset(); // Clear existing options in the selection dropdown.
+		var proteinIds = userdataTable.table.array("protein_ID");
+		proteinIds.forEach((id) => {
+			proteinSelectPlugin.addOption(id, id, false);
+		});
+		proteinSelectPlugin.clear();
+		
+
 		// Update the embedding landscape chart to reflect the newly loaded user-submitted data.
 		embeddingLandscape.update();
 
@@ -654,7 +678,7 @@ async function restoreSession() {
 
 		// Check if the value of selected in the session data is valid and exists in the user-submitted data table.
 		if (sessionData.selected && userdataTable && userdataTable.entry(sessionData.selected) !== null) {
-			selectedId.setValue(sessionData.selected);
+			Metro.getPlugin("#protein-select", "select").val(sessionData.selected);
 		} else {
 			categoryProbabilities.state.setValue("Click on a User Data point to view function predictions.");
 			sequenceAlignment.state.setValue("Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.");
