@@ -30,18 +30,6 @@ From: python:3.12-slim
 %startscript
     cd /app
 
-    SELECTED_GPU=$(
-        nvidia-smi \
-            --query-gpu=index,memory.free \
-            --format=csv,noheader,nounits |
-        sort -t',' -k2 -nr |
-        head -n1 |
-        cut -d',' -f1 |
-        tr -d ' '
-    )
-
-    export CUDA_VISIBLE_DEVICES="$SELECTED_GPU"
-
     exec gunicorn \
         --bind "${PHAGEGAP_BIND_ADDRESS}:${PHAGEGAP_PORT}" \
         --workers 1 \
