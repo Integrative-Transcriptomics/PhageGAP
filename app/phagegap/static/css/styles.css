@@ -161,14 +161,6 @@ td {
 	font-size: small !important;
 }
 
-#selection-info-container {
-	display: none;
-}
-
-#selection-clear-button {
-	color: var(--warning);
-}
-
 #data-input {
 	padding: 5px;
 }
@@ -206,7 +198,7 @@ td {
 #sequence-alignment-chart-container {
 	height: 9vh;
 	width: auto;
-	background: rgba(247, 249, 252, 0.8);
+	background: #f7f9fccc;
 	border-radius: 3px;
 }
 
