@@ -425,7 +425,6 @@ def _truncate_neighbors(nearest_neighbors: list[dict]) -> list[dict]:
 	return _nearest_neighbors
 	
 
-
 def _weighted_coordinates(coordinates: list[list[float]], distances: list[float]) -> list[float]:
 	"""Compute a weighted average of coordinates based on distances.
 	
