@@ -142,19 +142,6 @@ def create_app() -> Flask:
 		raise RuntimeError("PCA coordinates are empty; cannot build KDTree.")
 	kdtree = KDTree(pca["coords"])
 
-	logger.info("Loading structure information.")
-	# See function documentation for expected format of structure_info_path file.
-	structure_info_path = app_config.get("structure_info_path")
-	if structure_info_path is None:
-		logger.warning("Structure information path is not specified; the application will not provide structure information.")
-		structure_info_df = None
-	else:
-		structure_info_df = pd.read_csv(app_config.get("structure_info_path", None), delimiter="\t")
-		for col in ["protein_ID", "structure_path"]:
-			if col not in structure_info_df.columns:
-				raise RuntimeError(f"Missing required column '{col}' in structure information file.")
-		structure_info_df.set_index("protein_ID", inplace=True)
-
 	logger.info("Loading API token.")
 	api_token_path = app_config.get("api_token_path")
 	if api_token_path is None:
@@ -195,7 +182,6 @@ def create_app() -> Flask:
 		"knn": knn,
 		"tsne": tsne,
 		"api_token": api_token,
-		"structure_info": structure_info_df,
 	}
 
 	# Register API blueprint.
