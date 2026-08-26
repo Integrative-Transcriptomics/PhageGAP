@@ -45,7 +45,6 @@ export class StructureView {
 			{
 				cartoon: {
 					colorfunc: setColor,
-					radius: 0.4,
 				},
 			},
 		);

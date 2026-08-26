@@ -2,10 +2,10 @@ import { Chart } from "./chart.js";
 import { NA_COLOR } from "../constants.js";
 
 const ALIGNMENT_COLORS = {
-	M: "#BBBBBB",
-	X: "#444444",
-	D: "#EEDD88",
-	I: "#EEEEBB",
+	M: "#364B9A",
+	X: "#A01813",
+	D: "#DDDDDD",
+	I: "#BBBBBB",
 	NA: "#F7F9FC",
 };
 
@@ -25,7 +25,7 @@ export class SequenceAlignment extends Chart {
 				left: "8%",
 				right: "1%",
 				top: 10,
-				bottom: "5%",
+				bottom: "6%",
 			},
 			tooltip: {
 				trigger: "axis",
@@ -60,7 +60,11 @@ export class SequenceAlignment extends Chart {
 					filterMode: "weakFilter",
 					labelPrecision: 0,
 					showDetail: false,
-					moveHandleSize: 5,
+					moveHandleSize: 1,
+					handleSize: "300%",
+					handleStyle: {
+						color: "#444444",
+					},
 					backgroundColor: "transparent",
 					fillerColor: "rgba(6, 36, 101, 0.1)",
 				},
