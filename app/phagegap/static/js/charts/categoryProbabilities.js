@@ -52,12 +52,14 @@ export class CategoryProbabilities extends Chart {
 			grid: {
 				containLabel: true,
 				left: "5%",
-				top: "3%",
+				top: "5%",
 				right: "1%",
 				bottom: "1%",
 			},
 			xAxis: {
 				show: false,
+				min: 0,
+				max: 100,
 			},
 			yAxis: {
 				name: "",
@@ -74,6 +76,7 @@ export class CategoryProbabilities extends Chart {
 					offset: [20, 0],
 					distance: 0,
 				},
+				showBackground: true,
 				data: probabilities,
 			},
 		};
