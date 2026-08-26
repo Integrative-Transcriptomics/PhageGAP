@@ -53,7 +53,6 @@ def load_config() -> dict[str, Any]:
 	__________
 	- pca_path: Path to the saved PCA object for dimensionality reduction (**mandatory**).
 	- tsne_path: Path to the saved t-SNE object for dimensionality reduction (**mandatory**).
-	- knn: The number of nearest neighbors to consider for t-SNE coordinate projection. Default is 3.
 	"""
 	with open("config.toml", "rb") as file:
 		return tomllib.load(file)
@@ -136,10 +135,7 @@ def create_app() -> Flask:
 		raise RuntimeError("t-SNE path is not specified in the configuration.")
 	tsne = joblib.load(manifold_config.get("tsne_path"))
 
-	knn = manifold_config.get("knn", 3)
-	logger.info(f"Building KDTree for nearest neighbor (k={knn}) search.")
-	if pca["coords"].shape[0] == 0:
-		raise RuntimeError("PCA coordinates are empty; cannot build KDTree.")
+	logger.info("Building KDTree for nearest neighbor search.")
 	kdtree = KDTree(pca["coords"])
 
 	logger.info("Loading API token.")
@@ -179,7 +175,6 @@ def create_app() -> Flask:
 		"label_map": label_map,
 		"pca": pca,
 		"kdtree": kdtree,
-		"knn": knn,
 		"tsne": tsne,
 		"api_token": api_token,
 	}

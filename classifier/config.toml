@@ -25,4 +25,3 @@ model_type = "cnn"
 [manifold]
 pca_path = "models/pca.joblib"
 tsne_path = "models/tsne.joblib"
-knn = 3

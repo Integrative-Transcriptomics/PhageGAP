@@ -69,8 +69,11 @@ def get_prediction():
 		sequence_text = request.get_data(as_text=True)
 
 		# Run prediction and return results as JSON.
-		result = _predict(sequence_text)
-		return result.to_dict(orient="records"), 200
+		prediction_df, nearest_neighbors = _predict(sequence_text)
+		return {
+			"predictions": prediction_df.to_dict(orient="records"),
+			"nearest_neighbors": nearest_neighbors,
+		}, 200
 	except Exception as e:
 		logger.exception(f"Prediction request failed: {str(e)}")
 		return f"Prediction request failed: {str(e)}", 500
@@ -99,7 +102,7 @@ def _get_extension(key: str):
 		raise RuntimeError(f"Failed to access PhageGAP extension '{key}': {str(e)}") from e
 
 
-def _predict(sequence_text: str) -> pd.DataFrame:
+def _predict(sequence_text: str) -> tuple[pd.DataFrame, dict]:
 	"""Main prediction function of the PhageGAP classifier.
 	
 	Parameters
@@ -110,7 +113,10 @@ def _predict(sequence_text: str) -> pd.DataFrame:
 	Returns
 	_______
 	pd.DataFrame:
-		A DataFrame containing predictions, probabilities, and projection information for each protein.
+		A DataFrame containing predictions and their probabilities per protein sequence.
+
+	dict:
+		A dictionary containing (5) nearest neighbor information for each protein sequence.
 	"""
 	# Load application extensions needed for prediction.
 	try:
@@ -178,28 +184,23 @@ def _predict(sequence_text: str) -> pd.DataFrame:
 		errors="ignore",
 	)
 
-	# Project the embedded proteins into PCA space and search nearest neighbors.
+	# Project the embedded proteins into PCA space and extract nearest neighbors.
+	nearest_neighbors = {}
 	embed_matrix, embed_protein_ids = prepare_for_pca(embed_dict_pooled)
 	embed_pcs = pca["model"].transform(embed_matrix)
-	nn_pca_distances, nn_indices = kdtree.query(embed_pcs, k=3)
+	nn_pca_distances, nn_indices = kdtree.query(embed_pcs, k=5)
 	nn_pca_distances = nn_pca_distances.tolist() # (m, knn) 2D list.
 	nn_indices = nn_indices.tolist() # (m, knn) 2D list.
 	
 	# Extract nearest neighbor information.
-	for indices_list, pca_distances_list in zip(nn_indices, nn_pca_distances):
-		# Extract the t-SNE coordinates of the nearest neighbors.
-		neighbor_tsne_coords = [ tsne["coords"][i] for i in indices_list ]
-
-	"""
-	Needs:
-	- ...
-	"""
+	for i, protein_id in enumerate(embed_protein_ids):
+		nearest_neighbors.setdefault(protein_id, [])
+		for _, nn_index in enumerate(nn_indices[i]):
+			nearest_neighbor = {
+				"protein_ID": pca["ids"][nn_index],
+				"pca_distance": nn_pca_distances[i][_],
+				"tsne_coords": tsne["coords"][nn_index].tolist(),
+			}
+			nearest_neighbors[protein_id].append(nearest_neighbor)
 	
-	projection_df = pd.DataFrame({
-		"protein_ID": embed_protein_ids,
-		"nearest_neighbor_information": [ pca["ids"][_[0]] for _ in nn_indices ],
-	})
-
-	# Merge predictions with projection data and return as JSON.
-	result = pd.merge(predictions_df, projection_df, on="protein_ID", how="left")
-	return result
+	return predictions_df, nearest_neighbors
