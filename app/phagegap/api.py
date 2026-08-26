@@ -7,6 +7,8 @@ from __future__ import annotations
 import hmac
 import secrets
 import requests
+import logging
+import requests
 import numpy as np
 from phagegap import app
 from phagegap.util import GFFParser, read_sequence_from_cif, align_sequences
@@ -17,10 +19,17 @@ from traceback import print_exc
 from pathlib import Path
 from Bio import SeqIO
 from io import StringIO
+from scipy.special import softmax
 
+
+logger = logging.getLogger(__name__)
 
 # Initialize Flask-Limiter for rate limiting API requests.
 limiter = Limiter(key_func=get_remote_address, app=app)
+
+# Define the URL of the PhageGAP classifier service.
+# TODO: This needs to be queried before each request in the future.
+CLASSIFIER_URL = "http://134.2.9.251:20101"
 
 
 @app.before_request
@@ -63,7 +72,6 @@ def index():
 
 
 @app.route("/api/metadata", methods=["GET"])
-@limiter.limit("10 per minute")  # Limit to 50 requests per minute per IP address.
 def serve_metadata():
 	"""Serves the metadata as a JSON response.
 	
@@ -77,7 +85,6 @@ def serve_metadata():
 
 
 @app.route("/api/classifier/nninfo", methods=["POST"])
-@limiter.limit("60 per minute")  # Limit to 50 requests per minute per IP address.
 def serve_nearest_neighbor_information():
 	"""Serves information about the nearest neighbor of a user-provided protein.
 
@@ -85,9 +92,8 @@ def serve_nearest_neighbor_information():
 	- `nn_protein_id`: The protein ID of the nearest neighbor as argument in the query string.
 	- `protein_seq`: The amino acid sequence of the user-provided protein as form data.
 
-	This endpoint retrieves the structure of the nearest neighbor protein from the PhageGap classifier service,
-	extracts its amino acid sequence, and aligns it with the user-provided sequence. The response includes the
-	structure data and the alignment information.
+	Returns a JSON response containing the structure data and sequence alignment information for
+	the nearest neighbor protein, along with optional pLDDT and predicted TM-score if available.
 
 	Response
 	________
@@ -113,39 +119,21 @@ def serve_nearest_neighbor_information():
 		nn_protein_id = request.args.get("nn_protein_id")
 		protein_seq = request.form.get("protein_seq")
 
-		if app.extensions["emulate"]:
-			# Emulate the behavior of the PhageGap classifier service for testing purposes.
-			cif_content = Path(app.static_folder).joinpath("resources/data/emulate_nn_structure.cif").read_text(encoding="utf-8")
-			response_dict = {"structure_data": cif_content, "structure_plddt_mean": 0.42, "structure_ptm": 0.42}
-		else:
-			# Check if the PhageGap classifier service is accessible before making the request.
-			if not app.extensions["classifier_url"]:
-				return "PhageGap classifier service is not accessible. Please try again later.", 503
-			
-			# Request the structure of the nearest neighbor protein from the PhageGap classifier service.
-			response = requests.get(
-				f"{app.extensions['classifier_url']}/structure", {"protein_id": nn_protein_id},
-				headers={
-					"Authorization": (
-						f"Bearer {app.extensions['api_token']}"
-					),
-					"Accept": "application/json",
-				},
-				timeout=120,
-			)
-			response.raise_for_status()
-			response_dict = response.json()
+		structure_info = _get_protein_structure(nn_protein_id)
+		if isinstance(structure_info, tuple):
+			# If structure_info is a tuple, it contains an error message and status code.
+			return structure_info[0], structure_info[1]
 
 		# Extract the amino acid sequence from the CIF content.
-		cif_content = response_dict.get("structure_data")
+		cif_content = structure_info.get("structure_data")
 		if cif_content is None:
 			return f"No structure data found for {nn_protein_id}.", 404
 		nn_seq = read_sequence_from_cif(cif_content)
 
 		# Align the nearest neighbor sequence with the sequence provided by the user.
-		response_dict["sequence_alignment"] = list(align_sequences(nn_seq, protein_seq))
+		structure_info["sequence_alignment"] = list(align_sequences(nn_seq, protein_seq))
 
-		return response_dict, 200
+		return structure_info, 200
 	except Exception as e:
 		print_exc()
 		return f"Failed to retrieve nearest neighbor information: {str(e)}", 500
@@ -205,12 +193,13 @@ def serve_classifier_prediction():
 		except Exception as e:
 			return f"Error parsing FASTA sequences: {e}", 500
 
+		# Check if any valid FASTA records were found.
 		if len(sequence_records) == 0:
 			return "No valid FASTA records found.", 400
 
 		# Prepare user data structure to store results.
 		# Note: It is important to duplicate the protein ID as key for later merging.
-		user_data = {
+		user_results = {
 			"records": {
 				record.id: {
 					"protein_ID": record.id,
@@ -221,7 +210,7 @@ def serve_classifier_prediction():
 			},
 		}
 
-		''' TODO: Enable this once we have a working SocketIO connection to the client.
+		''' TODO: Legacy code that uses SocketIO for communication with client.
 		socketio.emit(
 			"notify",
 			{
@@ -235,54 +224,277 @@ def serve_classifier_prediction():
 		'''
 
 		if app.extensions["emulate"]:
-			# Emulate the behavior of the PhageGap classifier service for testing purposes.
-			for record in user_data["records"].values():
-				# Emulate classification results.
-				record["top1"] = "Terra"
-				record["P(top1)"] = round(np.random.uniform(0.7, 1.0), 3)
-				record["top2"] = "incognita"
-				record["P(top2)"] = round(np.random.uniform(0.5, 0.7), 3)
-				record["top3"] = "manet"
-				record["P(top3)"] = round(np.random.uniform(0.0, 0.5), 3)
-
-				# Emulate t-SNE coordinates by randomly selecting two entries from the metadata and using their t-SNE coordinates.
-				sample = app.extensions["metadata"].sample(n=2)
-				record["tsne_1"] = sample.iloc[0]["tsne_1"]
-				record["tsne_2"] = sample.iloc[1]["tsne_2"]
-				record["nearest_neighbor_ID"] = sample.iloc[0]["protein_ID"]
-				record["nearest_neighbor_distance"] = 42
+			response_data = _emulate_classifier_response(user_results)
 		else :
-			# Check if the PhageGap classifier service is accessible before making the request.
-			if not app.extensions["classifier_url"]:
-				return "PhageGap classifier service is not accessible. Please try again later.", 503
-			
-			# Forward the original FASTA text to the classifier apptainer.
-			response = requests.post(
-				f"{app.extensions['classifier_url']}/predict",
-				headers={
-					"Authorization": (
-						f"Bearer {app.extensions['api_token']}"
-					),
-					"Content-Type": "text/x-fasta; charset=utf-8",
-					"Accept": "application/json",
-				},
-				data=sequence_text.encode("utf-8"),
-				timeout=1800,
-			)
-			response.raise_for_status()
-			response_data = response.json()
+			try:
+				# Forward the original FASTA text to the classifier apptainer.
+				response = requests.get(
+					f"{CLASSIFIER_URL}/predict",
+					data=sequence_text.encode("utf-8"),
+					headers={
+						"Authorization": (
+							f"Bearer {app.extensions['api_token']}"
+						),
+						"Content-Type": "text/x-fasta; charset=utf-8",
+						"Accept": "application/json",
+					},
+					timeout=(2,1200),
+				)
+				response.raise_for_status()
+				response_data = response.json()
+			except requests.ConnectionError:
+				return "The PhageGAP classifier service is not accessible. Please try again later.", 404
+			except requests.Timeout:
+				return "The PhageGAP classifier service did not respond in time. The service may be busy, or the time limit for processing your request may have been exceeded.", 504
+			except requests.HTTPError as exc:
+				return f"HTTP error {exc.response.status_code} from the PhageGAP classifier service: {exc.response.text}", exc.response.status_code
 
 			# Merge the results from the classifier with the user data.
-			for record in response_data:
+			for record in response_data["predictions"]:
 				protein_id = record.get("protein_ID")
-				if protein_id in user_data["records"]:
+				if protein_id in user_results["records"]:
 					# TODO: Keys need to be adjusted, if changed in classifier.
-					for key in ["top1", "P(top1)", "top2", "P(top2)", "top3", "P(top3)", "nearest_neighbor_ID", "nearest_neighbor_distance", "tsne_1", "tsne_2"]:
-						user_data["records"][protein_id][key] = record.get(key)
+					for key in ["top1", "P(top1)", "top2", "P(top2)", "top3", "P(top3)"]:
+						user_results["records"][protein_id][key] = record.get(key)
 
-		# Return the merged results to the client.
-		return list(user_data["records"].values()), 200
+		# Convert the user data records to a list for JSON serialization.
+		user_results = list(user_results["records"].values())
+		nearest_neighbors = response_data.get("nearest_neighbors", {})
+
+		# Process the nearest neighbor information to estimate weighted coordinates and distances.
+		_estimate_tsne_coords(user_results, nearest_neighbors)
+
+		# Return the results to the client.
+		return {
+			"predictions": user_results,
+			"nearest_neighbors": nearest_neighbors,
+		}, 200
 
 	except Exception as e:
 		print_exc()
-		return f"Classification request failed: {str(e)}", 500
+		return f"An unexpected error occurred while processing the classification request: {str(e)}", 500
+
+
+def _get_protein_structure(protein_id: str) -> dict|tuple:
+	"""Retrieves the structure information for a given protein ID from the app extensions.
+	
+	This requires that the structure information DataFrame is available in the app extensions,
+	as well as the corresponding structure files mounted in `/app/structures/`.
+
+	If the structure information is not available, returns an error message and status code.
+
+	Parameters
+	__________
+	protein_id (str):
+		The protein ID for which to retrieve structure information.
+
+	Returns
+	_______
+	dict:
+		A dictionary containing the structure information and data for the specified protein ID.
+	
+	or
+	
+	tuple:
+		A tuple containing an error message and an HTTP status code if the structure information is not available
+	"""
+
+	# Access the structure information DataFrame from the app extensions.
+	structure_info_df = app.extensions["structure_info"]
+	if app.extensions["structure_info"] is None:
+		return "Structure information is not available in the application.", 404
+
+	# Try to retrieve the structure information for the specified protein ID.
+	try:
+		structure_info = structure_info_df.loc[protein_id].to_dict()
+		if app.extensions["emulate"]:
+			# TODO: This is only needed locally for testing, but should be removed in production.
+			structure_info_path = Path(app.static_folder).joinpath("resources/data/emulate_nn_structure.cif")
+			structure_info["structure_data"] = structure_info_path.read_text(encoding="utf-8")
+		else:
+			with open(f"/app/{structure_info['structure_path']}", "r") as f:
+				structure_data = f.read()
+			structure_info["structure_data"] = structure_data
+
+		# Remove the structure path from the response, as it is not needed by the client.
+		del structure_info["structure_path"]
+		return structure_info
+	except KeyError:
+		return f"No structure was found for {protein_id}.", 404
+	except OSError as exc:
+		return f"Error reading structure file for {protein_id}.", 500
+	except Exception as exc:
+		return f"Unexpected error while retrieving structure information for {protein_id}: {exc}", 500
+
+
+def _emulate_classifier_response(user_data: dict) -> dict:
+	"""Emulates the response of the PhageGAP classifier for testing purposes.
+
+	Parameters
+	__________
+	user_data (dict):
+		A dictionary containing the user-provided protein sequences and their associated data.
+
+	Returns
+	_______
+	dict:
+		A dictionary containing the emulated predictions and nearest neighbor information for each protein sequence.
+	"""
+	# Access the metadata DataFrame from the app extensions.
+	metadata_df = app.extensions["metadata"]
+
+	# Init. nearest neighbor information dictionary.
+	nearest_neighbors = {}
+
+	for record in user_data["records"].values():
+		record_nearest_neighbors = []
+
+		# Draw a random sample of 5 nearest neighbor protein IDs from the metadata DataFrame.
+		sample = metadata_df.sample(n=5)
+
+		# Generate five PCA distances from lognormal distribution with mean=2 and sigma=1.
+		pca_distances = np.random.lognormal( mean=2, sigma=1, size=5 )
+
+		# Assign each randomly selected nearest neighbor a PCA distance.
+		for i, (_, row) in enumerate(sample.iterrows()):
+			nearest_neighbor = {
+				"protein_ID": row["protein_ID"],
+				"pca_distance": pca_distances[i],
+				"tsne_1": row["tsne_1"],
+				"tsne_2": row["tsne_2"],
+				"subcategory": row["subcategory"],
+			}
+			record_nearest_neighbors.append(nearest_neighbor)
+
+		# Sort nearest neighbors by PCA distance.
+		record_nearest_neighbors.sort(key=lambda x: x["pca_distance"])
+
+		# Emulate classification results by using the 'subcategory' field of the three nearest neighbors as the top three predicted classes.
+		probabilities = np.random.exponential(2, size=4)
+		probabilities.sort()
+		probabilities = probabilities[::-1]  # Sort in descending order.
+		probabilities /= np.sum(probabilities)
+		record["top1"] = record_nearest_neighbors[0]["subcategory"]
+		record["P(top1)"] = probabilities[0]
+		record["top2"] = record_nearest_neighbors[1]["subcategory"]
+		record["P(top2)"] = probabilities[1]
+		record["top3"] = record_nearest_neighbors[2]["subcategory"]
+		record["P(top3)"] = probabilities[2]
+
+		# Delete the 'subcategory' field from the nearest neighbor records to avoid redundancy.
+		for nn in record_nearest_neighbors:
+			del nn["subcategory"]
+
+		# Assign the nearest neighbor information to the main 'nearest_neighbors' dictionary.
+		nearest_neighbors[record["protein_ID"]] = record_nearest_neighbors
+
+	# Return the emulated classifier response as a dictionary containing the predictions and nearest neighbor information.
+	return {
+		"predictions": user_data["records"],
+		"nearest_neighbors": nearest_neighbors,
+	}
+
+
+def _weighted_coordinates(coordinates: list[list[float]], distances: list[float]) -> list[float]:
+	"""Compute a weighted average of coordinates based on distances.
+	
+	For a data point _P_, the idea is that _P_ was projected into a high-dimensional manifold, e.g. PCA, and
+	have its _k_ nearest neighbors in that space. The coordinates of those neighbors in a lower-dimensional space,
+	e.g. t-SNE, are known. The goal is to compute a weighted average of those coordinates, where the weights are
+	based on the distances to the neighbors in the high-dimensional space.
+
+	This method implements a softmax weighting scheme, where closer neighbors have more influence on the weighted average.
+	Weights are computed using a softmax function on the negative distances, so that closer neighbors have more influence
+	on the weighted average. The temperature parameter `tau` controls the sharpness of the softmax distribution; smaller
+	values of `tau` make the weighting more sensitive to distance differences. Currently a fixed value of `tau = 0.5` is used.
+
+	_Note: If the nearest neighbor (first in the list) has a distance of zero, the function will return the coordinates of
+	that neighbor directly, as it is assumed to be the same point in the lower-dimensional space._
+
+	Parameters
+	__________
+	coordinates (list[list[float]]):
+		A list of coordinates of the nearest neighbors in the lower-dimensional space (e.g., t-SNE).
+		Each element is a list representing the coordinates of a neighbor.
+
+	distances (list[float]):
+		A list of distances to the nearest neighbors in the high-dimensional space (e.g., PCA).
+		Each element corresponds to the distance of a neighbor.
+
+	Returns
+	_______
+	list[float]:
+		A list representing the weighted average coordinates in the lower-dimensional space.	
+	"""
+	# If no coordinates are provided, raise an error.
+	if len(coordinates) == 0:
+		raise ValueError("No coordinates provided for weighted averaging.")
+	# If coordinates and distances lengths do not match, raise an error.
+	if len(coordinates) != len(distances):
+		raise ValueError("The number of coordinates must match the number of distances.")
+
+	# If the nearest neighbor (first in list) distance is zero, return the corresponding coordinates directly.
+	if distances[0] == 0:
+		return coordinates[0]
+
+	# Convert distances to weights using softmax.
+	distances = np.array(distances)
+	tau = .5  # Temperature parameter for softmax; can be adjusted based on desired sensitivity.
+	weights = softmax(-distances / tau)  # Invert distances for softmax.
+
+	# Compute weighted average of nearest neighbor coordinates.
+	return [
+		round( sum(coords[i] * weights[i] for i in range(len(coordinates))), 3 )
+		for coords in zip(*coordinates)
+	]
+
+
+def _estimate_tsne_coords(user_data: list, nearest_neighbors: dict):
+	"""In-place modification of the provided user data (list of records) to estimate t-SNE coordinates based on the nearest neighbor information.
+
+	Parameters
+	__________
+	user_data (list):
+		A list of dictionaries, each representing a protein record with its associated data.
+		<pre>
+			"protein_ID": str, the identifier of the protein.
+			"description": str, the description of the protein.
+			"sequence": str, the amino acid sequence of the protein.
+			"top1": str, the (1st) predicted class label for the protein.
+			"top2": str, the (2nd) predicted class label for the protein.
+			"top3": str, the (3rd) predicted class label for the protein.
+			"P(top1)": float, the probability of the (1st) predicted class label.
+			"P(top2)": float, the probability of the (2nd) predicted class label.
+			"P(top3)": float, the probability of the (3rd) predicted class label.
+		</pre>
+	
+	nearest_neighbors (dict):
+		A dictionary where keys are protein IDs and values are lists of nearest neighbor information,
+		including their t-SNE coordinates and PCA distances.
+		<pre>
+			"protein_ID": str, the identifier of the neighbor protein.
+			"pca_distance": float, the PCA distance to the neighbor protein.
+			"tsne_1": float, the first t-SNE coordinate of the neighbor protein.
+			"tsne_2": float, the second t-SNE coordinate of the neighbor protein.
+		</pre>
+
+	Returns
+	_______
+	None. The function modifies the `user_data` list in place, adding estimated t-SNE coordinates and
+	distances to the nearest neighbor for each protein record.
+	"""
+	for record in user_data:
+		protein_id = record["protein_ID"]
+		if protein_id in nearest_neighbors:
+			nn_info = nearest_neighbors[protein_id]
+
+			# Extract t-SNE coordinates and PCA distances of the nearest neighbors.
+			neighbor_tsne_coords = [ [nn["tsne_1"], nn["tsne_2"]] for nn in nn_info ]
+			pca_distances_list = [ nn["pca_distance"] for nn in nn_info ]
+
+			# Compute weighted coordinates based on the distances to the nearest neighbors.
+			weighted_coords = _weighted_coordinates(neighbor_tsne_coords, pca_distances_list)
+
+			# Update the record with estimated t-SNE coordinates and distance to nearest neighbor.
+			record["tsne_1"] = weighted_coords[0]
+			record["tsne_2"] = weighted_coords[1]

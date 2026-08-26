@@ -1,6 +1,6 @@
 import { Chart } from "./chart.js";
 import { CATEGORY_COLORS, SUBCATEGORY_MAP, NA_COLOR } from "../constants.js";
-import { metadataTable, userdataTable } from "../main.js";
+import { metadataTable, userdataTable, nearestNeighbors } from "../main.js";
 import { displayNotification } from "../utility.js";
 
 /**
@@ -165,16 +165,7 @@ export class EmbeddingLandscape extends Chart {
 			data: d,
 			zlevel: 12, // Render the "User Data" series above the other series to ensure visibility.
 			markLine: {
-				// Mark line style used with highlight to connect the nearest neighbor of the clicked point to the clicked point.
-				symbol: ["none", "arrow"], // Removes arrows from the start and end.
-				emphasis: {
-					disabled: true, // Disable emphasis effect on the mark line to avoid distraction.
-				},
-				lineStyle: {
-					color: "#000000",
-					type: "solid",
-					width: 1,
-				},
+				symbol: ["none", "none"],
 				data: [], // This will be populated dynamically when a user data point is clicked.
 			},
 		});
@@ -197,9 +188,40 @@ export class EmbeddingLandscape extends Chart {
 	 * @param {object} clicked An entry from the `userdataTable` corresponding to the clicked data point in the embedding landscape chart.
 	 */
 	highlight(clicked) {
-		const nearestNeighborPoint = metadataTable.entry(
-			clicked.nearest_neighbor_ID,
-		);
+		var d = [];
+		var isFirst = true;
+		for (const nn of nearestNeighbors[clicked.protein_ID]) {
+			var nn_metadata = metadataTable.entry(nn.protein_ID);
+
+			d.push([
+				{
+					coord: [clicked.tsne_1, clicked.tsne_2],
+				},
+				{
+					name: nn.protein_ID,
+					coord: [nn_metadata.tsne_1, nn_metadata.tsne_2],
+					label: {
+						show: isFirst,
+					},
+					emphasis: {
+						label: {
+							show: true,
+						},
+						lineStyle: {
+							width: 2,
+						},
+					},
+					lineStyle: {
+						color: "#000000",
+						type: isFirst ? "solid" : "dashed",
+						width: isFirst ? 1.5 : 1,
+					},
+				},
+			]);
+
+			if (isFirst) isFirst = false;
+		}
+
 		// Set mark line data of "User Data" series to connect the clicked point to its nearest neighbor.
 		this.echart.setOption({
 			series: this.echart.getOption().series.map((series) => {
@@ -207,23 +229,7 @@ export class EmbeddingLandscape extends Chart {
 					return {
 						...series,
 						markLine: {
-							data: [
-								[
-									{
-										coord: [clicked.tsne_1, clicked.tsne_2],
-									},
-									{
-										name: clicked.protein_ID,
-										coord: [
-											nearestNeighborPoint.tsne_1,
-											nearestNeighborPoint.tsne_2,
-										],
-										label: {
-											show: true,
-										},
-									},
-								],
-							],
+							data: d,
 						},
 					};
 				}
@@ -289,13 +295,14 @@ export class EmbeddingLandscape extends Chart {
 		if (params.seriesName === "User Data") {
 			if (!userdataTable) return;
 			const info = userdataTable.entry(params.data.name);
+			const nearestNeighbor = nearestNeighbors[params.data.name][0];
 			var content = `<code>ID: ${params.data.name}</code><br>`;
 			let top1 = info.top1;
 			let top1Prob = (info["P(top1)"] * 100).toFixed(2);
 			content += `<table border=1 frame=void rules=rows>`;
 			content += `<tr><td>Description:</td><td><p style="max-width: 300px; font-size: small;">${info.description}</p></td></tr>`;
 			content += `<tr><td>Predicted Category:</td><td>${top1} › ${SUBCATEGORY_MAP[top1]} (${top1Prob}%)</td></tr>`;
-			content += `<tr><td>Nearest Neighbor:</td><td>${info.nearest_neighbor_ID} (${info.nearest_neighbor_distance.toFixed(2)})</td></tr>`;
+			content += `<tr><td>Nearest Neighbor:</td><td>${nearestNeighbor.protein_ID} d<sub>PCA</sub>=${nearestNeighbor.pca_distance.toFixed(2)}</td></tr>`;
 			content += `</table>`;
 			content += `<br><code>Click for more details!</code>`;
 		} else {
@@ -306,7 +313,7 @@ export class EmbeddingLandscape extends Chart {
 			content += `<tr><td>Organism:</td><td>${info.organism}</td></tr>`;
 			content += `<tr><td>Category:</td><td>${info.category} › ${info.subcategory}</td></tr>`;
 			content += `<tr><td>Product:</td><td>${info.product}</td></tr>`;
-			content += `<tr><td>t-SNE Coordinates:</td><td>${info.tsne_1.toFixed(2)}, ${info.tsne_2.toFixed(2)}</td></tr>`;
+			// content += `<tr><td>t-SNE Coordinates:</td><td>${info.tsne_1.toFixed(2)}, ${info.tsne_2.toFixed(2)}</td></tr>`;
 			content += `</table>`;
 		}
 		return content;

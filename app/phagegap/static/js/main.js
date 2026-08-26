@@ -22,6 +22,11 @@ export var metadataTable = null;
 export var userdataTable = null;
 
 /**
+ * Global {@link Object} to store nearest neighbor information user-submitted data.
+ */
+export var nearestNeighbors = {};
+
+/**
  * Global {@link EmbeddingLandscape} instance for managing the embedding landscape chart.
  */
 export var embeddingLandscape = null;
@@ -96,11 +101,18 @@ export function initApp() {
 		document.getElementById("structure-view-container"),
 	);
 
-	// Initialize click handler for the embedding landscape chart.
+	// Initialize click handler for the embedding landscape and genomic context chart.
 	embeddingLandscape.echart.on("click", (params) => {
 		if (params.seriesName === "User Data") {
 			// Update the selected protein when a "User Data" point is clicked. The observer triggers the propagation of the click event to the appropriate handlers.
 			selected.setValue(params.data.name);
+		}
+	});
+	genomicContext.echart.on("click", (params) => {
+		let protein_id = params.data.name;
+		// Check if the clicked protein ID exists in the user-submitted data table before updating the selected protein.
+		if (userdataTable && userdataTable.entry(protein_id) !== null) {
+			selected.setValue(protein_id);
 		}
 	});
 
@@ -193,7 +205,7 @@ function handleSelectionChange() {
 						.content,
 				},
 				params: {
-					nn_protein_id: clicked.nearest_neighbor_ID,
+					nn_protein_id: nearestNeighbors[clicked.protein_ID][0].protein_ID,
 				},
 			})
 			.then((response) => {
@@ -476,7 +488,11 @@ function requestPrediction() {
 			},
 		})
 		.then((response) => {
-			processUserData(response.data);
+			// Update the global nearest neighbor information with the received data.
+			Object.assign(nearestNeighbors, response.data.nearest_neighbors);
+
+			// Process the user-submitted data received from the server and update the application state accordingly.
+			processUserData(response.data.predictions);
 		})
 		.catch((error) => {
 			console.error(error);
@@ -506,6 +522,7 @@ function processUserData(data) {
 	if (collapse && !collapse.options.collapsed) {
 		collapse.collapse();
 	}
+
 	// Initialize the user-data table with the received data.
 	promiseUserdataTable(data).then(() => {
 		// Update the embedding landscape chart to reflect the newly loaded user-submitted data.

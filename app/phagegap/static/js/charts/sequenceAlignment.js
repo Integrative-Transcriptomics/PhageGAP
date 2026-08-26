@@ -2,11 +2,11 @@ import { Chart } from "./chart.js";
 import { NA_COLOR } from "../constants.js";
 
 const ALIGNMENT_COLORS = {
-	M: "#578DC9",
-	X: "#D9070D",
-	D: "#C8B9D1",
-	I: "#F6B93D",
-	NA: NA_COLOR,
+	M: "#BBBBBB",
+	X: "#444444",
+	D: "#EEDD88",
+	I: "#EEEEBB",
+	NA: "#F7F9FC",
 };
 
 export var structureColors = [];
