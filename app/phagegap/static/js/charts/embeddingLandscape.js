@@ -167,6 +167,7 @@ export class EmbeddingLandscape extends Chart {
 			markLine: {
 				symbol: ["none", "none"],
 				data: [], // This will be populated dynamically when a user data point is clicked.
+				z: 100,
 			},
 		});
 
@@ -200,12 +201,26 @@ export class EmbeddingLandscape extends Chart {
 				{
 					name: nn.protein_ID,
 					coord: [nn_metadata.tsne_1, nn_metadata.tsne_2],
+					value: nn.pca_distance,
 					label: {
 						show: isFirst,
+						formatter: (params) => {
+							return params.name;
+						}
 					},
 					emphasis: {
 						label: {
 							show: true,
+							formatter: (params) => {
+								return `${params.name} d{sub|PCA}=${params.value.toFixed(2)}`;
+							},
+							rich: {
+								sub: {
+									fontSize: 9,
+									verticalAlign: "bottom", // Shifts text downward relative to baseline
+									padding: [0, 0, -2, 0], // Fine-tune vertical position [top, right, bottom, left]
+								},
+							},
 						},
 						lineStyle: {
 							width: 2,

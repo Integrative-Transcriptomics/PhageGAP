@@ -261,8 +261,14 @@ def serve_classifier_prediction():
 		user_results = list(user_results["records"].values())
 		nearest_neighbors = response_data.get("nearest_neighbors", {})
 
+		# Truncate the nearest neighbor information to remove outliers.
+		nearest_neighbors = {
+			k: _truncate_neighbors(v)
+			for k, v in nearest_neighbors.items()
+		}
+
 		# Process the nearest neighbor information to estimate weighted coordinates and distances.
-		_estimate_tsne_coords(user_results, nearest_neighbors)
+		_estimate_tsne_coordinates(user_results, nearest_neighbors)
 
 		# Return the results to the client.
 		return {
@@ -395,18 +401,44 @@ def _emulate_classifier_response(user_data: dict) -> dict:
 	}
 
 
+def _truncate_neighbors(nearest_neighbors: list[dict]) -> list[dict]:
+	# Ensure that the nearest neighbors are sorted by PCA distance for each protein record.
+	nearest_neighbors.sort(key=lambda x: x.get("pca_distance", float("inf")))
+
+	# Extract distances per nearest neighbor.
+	distances = [nn.get("pca_distance", float("inf")) for nn in nearest_neighbors]
+
+	# If the nearest neighbor (first in list) distance is zero, return only that neighbor.
+	if distances[0] == 0.0:
+		return [nearest_neighbors[0]]
+
+	# Compute the ratio of distance change between consecutive neighbors.
+	ratios = [(distances[i] + 1e-6) / (distances[i - 1] + 1e-6) for i in range(1, len(distances))]
+
+	# Remove neighbors where the ratio exceed 3.0; but at least two.
+	_nearest_neighbors = [nearest_neighbors[0]]
+	for i, ratio in enumerate(ratios):
+		if ratio > 3.0 and len(_nearest_neighbors) >= 2:
+			break
+		_nearest_neighbors.append(nearest_neighbors[i + 1])
+
+	return _nearest_neighbors
+	
+
+
 def _weighted_coordinates(coordinates: list[list[float]], distances: list[float]) -> list[float]:
 	"""Compute a weighted average of coordinates based on distances.
 	
-	For a data point _P_, the idea is that _P_ was projected into a high-dimensional manifold, e.g. PCA, and
-	have its _k_ nearest neighbors in that space. The coordinates of those neighbors in a lower-dimensional space,
-	e.g. t-SNE, are known. The goal is to compute a weighted average of those coordinates, where the weights are
-	based on the distances to the neighbors in the high-dimensional space.
+	Given a data point P, projected into a high-dimensional manifold (e.g., PCA) and its k nearest neighbors
+	in that domain, as well as their corresponding coordinates in a lower-dimensional manifold (e.g., t-SNE),
+	a weighted average of the lower-dimensional manifold coordinates of the k nearest neighbors is computed.
+	This average is then used as approximate coordinates of P in the low-dimensional manifold.
 
-	This method implements a softmax weighting scheme, where closer neighbors have more influence on the weighted average.
-	Weights are computed using a softmax function on the negative distances, so that closer neighbors have more influence
-	on the weighted average. The temperature parameter `tau` controls the sharpness of the softmax distribution; smaller
-	values of `tau` make the weighting more sensitive to distance differences. Currently a fixed value of `tau = 0.5` is used.
+	This method implements a softmax weighting on negative distances, where closer neighbors have more influence
+	on the weighted average coordinate; i.e., close neighbors have more influence on the weighted average.
+	The temperature parameter `tau` controls the sharpness of the softmax distribution; smaller
+	values of `tau` make the weighting more sensitive to distance differences.
+	Currently a fixed value of `tau = 1` is used.
 
 	_Note: If the nearest neighbor (first in the list) has a distance of zero, the function will return the coordinates of
 	that neighbor directly, as it is assumed to be the same point in the lower-dimensional space._
@@ -424,7 +456,7 @@ def _weighted_coordinates(coordinates: list[list[float]], distances: list[float]
 	Returns
 	_______
 	list[float]:
-		A list representing the weighted average coordinates in the lower-dimensional space.	
+		The weighted average coordinates in the lower-dimensional space.	
 	"""
 	# If no coordinates are provided, raise an error.
 	if len(coordinates) == 0:
@@ -439,7 +471,7 @@ def _weighted_coordinates(coordinates: list[list[float]], distances: list[float]
 
 	# Convert distances to weights using softmax.
 	distances = np.array(distances)
-	tau = .5  # Temperature parameter for softmax; can be adjusted based on desired sensitivity.
+	tau = 1  # Temperature parameter for softmax; can be adjusted based on desired sensitivity.
 	weights = softmax(-distances / tau)  # Invert distances for softmax.
 
 	# Compute weighted average of nearest neighbor coordinates.
@@ -449,7 +481,7 @@ def _weighted_coordinates(coordinates: list[list[float]], distances: list[float]
 	]
 
 
-def _estimate_tsne_coords(user_data: list, nearest_neighbors: dict):
+def _estimate_tsne_coordinates(user_data: list, nearest_neighbors: dict):
 	"""In-place modification of the provided user data (list of records) to estimate t-SNE coordinates based on the nearest neighbor information.
 
 	Parameters
@@ -486,11 +518,11 @@ def _estimate_tsne_coords(user_data: list, nearest_neighbors: dict):
 	for record in user_data:
 		protein_id = record["protein_ID"]
 		if protein_id in nearest_neighbors:
-			nn_info = nearest_neighbors[protein_id]
+			nns = nearest_neighbors[protein_id]
 
 			# Extract t-SNE coordinates and PCA distances of the nearest neighbors.
-			neighbor_tsne_coords = [ [nn["tsne_1"], nn["tsne_2"]] for nn in nn_info ]
-			pca_distances_list = [ nn["pca_distance"] for nn in nn_info ]
+			neighbor_tsne_coords = [ [nn["tsne_1"], nn["tsne_2"]] for nn in nns ]
+			pca_distances_list = [ nn["pca_distance"] for nn in nns ]
 
 			# Compute weighted coordinates based on the distances to the nearest neighbors.
 			weighted_coords = _weighted_coordinates(neighbor_tsne_coords, pca_distances_list)
