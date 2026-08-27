@@ -169,9 +169,12 @@ export class GenomicContext extends Chart {
 			<strong>Product:</strong> ${d.product}<br/>
 			<strong>Predicted Category:</strong> ${d.category}
 		`;
-		if (d.category !== "Unknown") {
+		if (
+			d.category !== "Unknown" &&
+			selectedId.getValue() !== params.data.name
+		) {
 			// TODO: Find better way to check if the feature is selectable.
-			content += `<br/><code>Click for more details.</code>`;
+			content += `<br/><code>Click for details.</code>`;
 		}
 		return content;
 	}
