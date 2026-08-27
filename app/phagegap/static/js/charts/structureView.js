@@ -1,5 +1,6 @@
 import { structureColors } from "./sequenceAlignment.js";
-import { NA_COLOR } from "../constants.js";
+import { metadataTable } from "../main.js";
+import { NA_COLOR, CATEGORY_COLORS } from "../constants.js";
 
 /**
  * Internal class for handling the structure view.
@@ -51,14 +52,15 @@ export class StructureView {
 		this.glviewer.render();
 	}
 
-	setInfo(text, plddt_mean = null, ptm = null) {
-		var c = `<code>${text}</code>`;
-		if (plddt_mean !== null) {
-			c += `<br/>Mean pLDDT: ${plddt_mean.toFixed(2)}`;
-		}
-		if (ptm !== null) {
-			c += `<br/>Predicted TM-score: ${ptm.toFixed(2)}`;
-		}
+	setInfo(proteinId, plddt_mean = null, ptm = null, compareCategory = null) {
+		var c = `<code>${proteinId}</code>`;
+		if (compareCategory !== null) {
+			var proteinMetadata = metadataTable.entry(proteinId);
+			var bgClr = CATEGORY_COLORS[proteinMetadata.category] || NA_COLOR;
+			c += `<code class="reduce-3 ml-1 va-middle" style="background: ${bgClr}">${proteinMetadata.subcategory}</code>`;
+		};
+		if (plddt_mean !== null) c += `<br/>Mean pLDDT: ${plddt_mean.toFixed(2)}`;
+		if (ptm !== null) c += `<br/>Predicted TM-score: ${ptm.toFixed(2)}`;
 		document.getElementById("structure-view-info").innerHTML = c;
 	}
 }
