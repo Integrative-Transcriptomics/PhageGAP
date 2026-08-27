@@ -25,6 +25,13 @@ export class ArqueroTable {
 	}
 
 	/**
+	 * @returns The number of rows stored in the table.
+	 */
+	size() {
+		return this.table.numRows();
+	}
+
+	/**
 	 * Retrieves all entries in the metadata table.
 	 * 
 	 * @returns {Array} An array of all objects in the table oriented as records.
