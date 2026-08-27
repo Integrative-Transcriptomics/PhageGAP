@@ -166,15 +166,15 @@ export class EmbeddingLandscape extends Chart {
 			itemStyle: {
 				color: NA_COLOR,
 				borderColor: "black",
-				borderWidth: 1,
+				borderWidth: 0.8,
 				opacity: 1,
 			},
 			data: d,
-			zlevel: 12, // Render the "User Data" series above the other series to ensure visibility.
+			zlevel: 13, // Render the "User Data" series above the other series to ensure visibility.
 			markLine: {
 				symbol: ["none", "none"],
 				data: [], // This will be populated dynamically when a user data point is clicked.
-				z: 100,
+				zlevel: 12,
 			},
 		});
 
@@ -199,18 +199,29 @@ export class EmbeddingLandscape extends Chart {
 		var d = [];
 		var isFirst = true;
 		for (const nn of nearestNeighbors[clicked.protein_ID]) {
-			var nn_metadata = metadataTable.entry(nn.protein_ID);
-
+			var nnMetadata = metadataTable.entry(nn.protein_ID);
 			d.push([
 				{
 					coord: [clicked.tsne_1, clicked.tsne_2],
 				},
 				{
 					name: nn.protein_ID,
-					coord: [nn_metadata.tsne_1, nn_metadata.tsne_2],
+					coord: [nnMetadata.tsne_1, nnMetadata.tsne_2],
 					value: nn.pca_distance,
 					label: {
 						show: false,
+						backgroundColor: "rgba(238, 243, 251, 0.5)",
+						borderRadius: 3,
+						formatter: (params) => {
+							return `${params.name} d{sub|PCA}=${params.value.toFixed(2)}`;
+						},
+						rich: {
+							sub: {
+								fontSize: 9,
+								verticalAlign: "bottom", // Shifts text downward relative to baseline
+								padding: [0, 0, -2, 0], // Fine-tune vertical position [top, right, bottom, left]
+							},
+						},
 					},
 					emphasis: {
 						label: {
@@ -233,7 +244,7 @@ export class EmbeddingLandscape extends Chart {
 					lineStyle: {
 						color: "#000000",
 						type: isFirst ? "solid" : "dashed",
-						width: isFirst ? 1.5 : 1,
+						width: 1,
 					},
 				},
 			]);
@@ -255,6 +266,27 @@ export class EmbeddingLandscape extends Chart {
 				return series;
 			}),
 		});
+
+		// Highlight the first nearest neighbor (first in the list) by default.
+		this.highlightNearestNeighbor(0);
+	}
+
+	highlightNearestNeighbor(nnIndex) {
+		// Access mark line data.
+		var option = this.echart
+			.getOption();
+		// Iterate through all mark lines in the "User Data" series.
+		option.series[11].markLine.data.forEach((line, index) => {
+			if (index == nnIndex) {
+				line[1].label.show = true; // Show the label for the selected nearest neighbor.
+				line[1].lineStyle.width = 2; // Increase line width for the selected nearest neighbor.
+			} else {
+				line[1].label.show = false; // Hide the label for all lines.
+				line[1].lineStyle.width = 1; // Reset line width to default.
+			}
+		});
+		// Highlight the nearest neighbor at the specified index by changing its line style to solid and increasing its width.
+		this.echart.setOption(option);
 	}
 
 	resetHighlight() {
@@ -324,15 +356,16 @@ export class EmbeddingLandscape extends Chart {
 			const info = userdataTable.entry(params.data.name);
 			const nearestNeighbor = nearestNeighbors[params.data.name][0];
 			var content = `<code>ID: ${params.data.name}</code><br>`;
-			let top1 = info.top1;
-			let top1Prob = (info["P(top1)"] * 100).toFixed(2);
+			let top1Category = info.top1;
+			let top1Probability = (info["P(top1)"] * 100).toFixed(2);
+			let top1Topcategory = SUBCATEGORY_MAP[top1Category];
 			content += `<table border=1 frame=void rules=rows>`;
 			content += `<tr><td>Description:</td><td><p style="max-width: 300px; font-size: small;">${info.description}</p></td></tr>`;
-			content += `<tr><td>Predicted Category:</td><td>${top1} › ${SUBCATEGORY_MAP[top1]} (${top1Prob}%)</td></tr>`;
+			content += `<tr><td>Predicted Category:</td><td>${SUBCATEGORY_MAP[top1Topcategory]} › ${top1Category} (${top1Probability}%)</td></tr>`;
 			content += `<tr><td>Nearest Neighbor:</td><td>${nearestNeighbor.protein_ID} d<sub>PCA</sub>=${nearestNeighbor.pca_distance.toFixed(2)}</td></tr>`;
 			content += `</table>`;
 			if (selectedId.getValue() !== params.data.name) {
-				content += `<br><code>Click for more details.</code>`;
+				content += `<br><code>Click for details.</code>`;
 			}
 		} else {
 			if (!metadataTable) return;
@@ -342,7 +375,6 @@ export class EmbeddingLandscape extends Chart {
 			content += `<tr><td>Organism:</td><td>${info.organism}</td></tr>`;
 			content += `<tr><td>Category:</td><td>${info.category} › ${info.subcategory}</td></tr>`;
 			content += `<tr><td>Product:</td><td>${info.product}</td></tr>`;
-			// content += `<tr><td>t-SNE Coordinates:</td><td>${info.tsne_1.toFixed(2)}, ${info.tsne_2.toFixed(2)}</td></tr>`;
 			content += `</table>`;
 		}
 		return content;

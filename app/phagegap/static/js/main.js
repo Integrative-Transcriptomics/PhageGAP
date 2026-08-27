@@ -117,6 +117,7 @@ export function initApp() {
 			} else if (params.componentType === "markLine") {
 				// Update the nearest neighbor protein when a nearest neighbor line is clicked.
 				nnId.setValue(params.data.name);
+				embeddingLandscape.highlightNearestNeighbor(params.dataIndex);
 			} else {
 				return; // Ignore clicks on other components of the chart.
 			}
@@ -194,23 +195,23 @@ function enableClassificationTab() {
 function handleSelectionChange() {
 	if (!userdataTable) return;
 	if (selectedId.getValue() !== null) {
-		const currentSelection = userdataTable.entry(selectedId.getValue());
+		const selectedProteinEntry = userdataTable.entry(selectedId.getValue());
 
 		// Show the category probabilities for the clicked protein in the category probabilities chart.
-		if (categoryProbabilities && currentSelection)
-			categoryProbabilities.show(currentSelection);
+		if (categoryProbabilities && selectedProteinEntry)
+			categoryProbabilities.show(selectedProteinEntry);
 		// Clear the loading state of the category probabilities chart.
 		categoryProbabilities.state.setValue(null);
 
 		// Highlight the nearest neighbor of the clicked "User Data" point in the embedding landscape chart.
-		if (embeddingLandscape && currentSelection)
-			embeddingLandscape.highlight(currentSelection);
+		if (embeddingLandscape && selectedProteinEntry)
+			embeddingLandscape.highlight(selectedProteinEntry);
 
 		// Zoom into the genomic context feature corresponding to the clicked point, if it exists.
-		if (genomicContext && currentSelection) genomicContext.zoom();
+		if (genomicContext && selectedProteinEntry) genomicContext.zoom();
 
 		// Set the nearest neighbor information to the first nearest neighbor of the clicked protein.
-		nnId.setValue(nearestNeighbors[currentSelection.protein_ID][0].protein_ID);
+		nnId.setValue(nearestNeighbors[selectedProteinEntry.protein_ID][0].protein_ID);
 
 		// Add information about the selected protein to the selection info container.
 		document.getElementById("selection-clear-button").style.display =
@@ -292,6 +293,7 @@ function handleNearestNeighborChange() {
 				nnProteinId,
 				response.data.structure_plddt_mean,
 				response.data.structure_ptm,
+				currentSelection.top1,
 			);
 		})
 		.catch((error) => {
