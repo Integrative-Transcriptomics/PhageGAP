@@ -213,7 +213,8 @@ function handleSelectionChange() {
 		nnId.setValue(nearestNeighbors[currentSelection.protein_ID][0].protein_ID);
 
 		// Add information about the selected protein to the selection info container.
-		document.getElementById("selection-clear-button").style.display = "inline-block";
+		document.getElementById("selection-clear-button").style.display =
+			"inline-block";
 		document.getElementById("selection-info-label").innerHTML =
 			`Selected <code>${selectedId.getValue()}</code>`;
 	} else {
@@ -230,6 +231,9 @@ function handleSelectionChange() {
 		sequenceAlignment.state.setValue(
 			"Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.",
 		);
+
+		// Remove sequence identity information from the sequence alignment chart.
+		sequenceAlignment.setIdentity();
 
 		// Reset information about the selected protein in the selection info container.
 		document.getElementById("selection-clear-button").style.display = "none";
@@ -275,8 +279,12 @@ function handleNearestNeighborChange() {
 				nnProteinId,
 				currentSelection.protein_ID,
 			);
+
 			// Clear the loading state of the sequence alignment chart.
 			sequenceAlignment.state.setValue(null);
+
+			// Provide the sequence identity information in the sequence alignment chart.
+			sequenceAlignment.setIdentity(response.data.sequence_identity);
 
 			structureView.clear(); // Clear the structure view before adding new content.
 			structureView.fill(response.data.structure_data, "cif"); // Add the protein structure to the structure view.
@@ -313,15 +321,12 @@ function handleNearestNeighborChange() {
  * - When minimized, the structure view is reduced in size, and the category probabilities chart is displayed.
  */
 function toggleMaximizeStructureView() {
-	let structureViewLabel = document.getElementById("structure-view-label");
-	if (structureViewLabel.hasAttribute("minimized")) {
+	let structureViewCell = document.getElementById("structure-view-cell");
+	if (structureViewCell.hasAttribute("minimized")) {
 		// Maximize the structure view element.
 
 		// Remove indicator attribute.
-		structureViewLabel.removeAttribute("minimized");
-
-		// Switch label.
-		structureViewLabel.innerHTML = "Nearest Neighbor Structure";
+		structureViewCell.removeAttribute("minimized");
 
 		// Switch button label.
 		document.getElementById("toolbar-maximize-structure-button").innerHTML =
@@ -334,9 +339,7 @@ function toggleMaximizeStructureView() {
 		document
 			.getElementById("embedding-landscape-chart-cell")
 			.classList.add("cell-6");
-		document
-			.getElementById("structure-view-cell")
-			.classList.remove("cell-3");
+		document.getElementById("structure-view-cell").classList.remove("cell-3");
 		document.getElementById("structure-view-cell").classList.add("cell-6");
 
 		// Adjust the container widths of the embedding landscape chart and structure display to fill the available space.
@@ -347,17 +350,16 @@ function toggleMaximizeStructureView() {
 
 		// Hide the category probabilities chart when the structure view is maximized.
 		document.getElementById(
+			"category-probabilities-chart-label",
+		).style.display = "none";
+		document.getElementById(
 			"category-probabilities-chart-container",
 		).style.display = "none";
 	} else {
 		// Minimize the structure view element.
 
 		// Add indicator attribute.
-		structureViewLabel.setAttribute("minimized", "");
-
-		// Switch label.
-		structureViewLabel.innerHTML =
-			"Function Prediction and Nearest Neighbor Structure";
+		structureViewCell.setAttribute("minimized", "");
 
 		// Switch button label.
 		document.getElementById("toolbar-maximize-structure-button").innerHTML =
@@ -370,19 +372,19 @@ function toggleMaximizeStructureView() {
 		document
 			.getElementById("embedding-landscape-chart-cell")
 			.classList.add("cell-9");
-		document
-			.getElementById("structure-view-cell")
-			.classList.remove("cell-6");
+		document.getElementById("structure-view-cell").classList.remove("cell-6");
 		document.getElementById("structure-view-cell").classList.add("cell-3");
 
 		// Adjust the container widths of the embedding landscape chart and structure display to fill the available space.
 		document.getElementById("embedding-landscape-chart-container").style.width =
 			"73vw";
 		document.getElementById("structure-view-container").style.width = "27vw";
-		document.getElementById("structure-view-container").style.height =
-			"40vh";
+		document.getElementById("structure-view-container").style.height = "40vh";
 
 		// Show the category probabilities chart when the structure view is minimized.
+		document.getElementById(
+			"category-probabilities-chart-label",
+		).style.display = "block";
 		document.getElementById(
 			"category-probabilities-chart-container",
 		).style.display = "block";
