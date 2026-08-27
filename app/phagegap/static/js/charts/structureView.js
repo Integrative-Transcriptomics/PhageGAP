@@ -48,11 +48,6 @@ export class StructureView {
 				},
 			},
 		);
-		/*this.glviewer.addSurface($3Dmol.SurfaceType.MS, {
-			smoothness: 1,
-			opacity: 0.5,
-			color: NA_COLOR,
-		});*/
 		this.glviewer.render();
 	}
 
