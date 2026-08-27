@@ -113,6 +113,27 @@ export class SequenceAlignment extends Chart {
 		this.echart.clear();
 	}
 
+	setIdentity(identity) {
+		var label = document.getElementById("sequence-alignment-identity-label");
+		// Set the sequence identity information for the sequence alignment chart.
+		if (identity === null || identity === undefined) {
+			label.innerHTML = "";
+		} else {
+			// Remove previous color classes.
+			label.classList.remove("bg-green");
+			label.classList.remove("bg-orange");
+			label.classList.remove("bg-red");
+			if (identity > 40) {
+				label.classList.add("bg-dark-green");
+			} else if (identity < 20) {
+				label.classList.add("bg-dark-red");
+			} else {
+				label.classList.add("bg-drak-orange");
+			}
+			label.innerHTML = `Identity: ${identity}%`;
+		}
+	}
+
 	#state(charA, charB) {
 		if (charA === charB) {
 			return ["M", "M"];

@@ -131,7 +131,9 @@ def serve_nearest_neighbor_information():
 		nn_seq = read_sequence_from_cif(cif_content)
 
 		# Align the nearest neighbor sequence with the sequence provided by the user.
-		structure_info["sequence_alignment"] = list(align_sequences(nn_seq, protein_seq))
+		nn_alignment = list(align_sequences(nn_seq, protein_seq))
+		structure_info["sequence_alignment"] = [nn_alignment[0], nn_alignment[1]]
+		structure_info["sequence_identity"] = nn_alignment[2]
 
 		return structure_info, 200
 	except Exception as e:
@@ -199,16 +201,21 @@ def serve_classifier_prediction():
 
 		# Prepare user data structure to store results.
 		# Note: It is important to duplicate the protein ID as key for later merging.
-		user_results = {
-			"records": {
-				record.id: {
-					"protein_ID": record.id,
-					"description": record.description,
-					"sequence": str(record.seq)
-				}
-				for record in sequence_records
-			},
-		}
+		user_results = { "records": { } }
+		for record in sequence_records:
+			# Clean description.
+			record.description = str(record.description).replace(str(record.id), "").strip()
+			record.description = str(record.description).replace("[", "").replace("]", "")
+			# Change record identifier, if `protein_id` is available in the description.
+			if "protein_id=" in record.description:
+				protein_id = record.description.split("protein_id=")[1].split()[0]
+				record.id = protein_id
+			# Store the record in the user results dictionary.
+			user_results["records"][record.id] = {
+				"protein_ID": record.id,
+				"description": record.description,
+				"sequence": str(record.seq)
+			}
 
 		''' TODO: Legacy code that uses SocketIO for communication with client.
 		socketio.emit(

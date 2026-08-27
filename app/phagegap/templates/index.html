@@ -183,7 +183,7 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 										FASTA and GFF protein IDs must match.
 										<br/>
 										&bull; <code>Function Classification</code> predicts functional categories and nearest neighbors.
-										Results are added to the <b>Global Embedding Landscape</b> as <em>User Data</em> (<b>○</b>).
+										Results are added to the <b>Embedding Landscape</b> as <em>User Data</em> (<b>○</b>).
 										Additional submissions are appended to existing results.
 										<br/>
 										&bull; Results table/session can be downloaded from the toolbar and restored using <code>Reload Session</code>.
@@ -199,9 +199,9 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 					<!-- Embedding landscape chart. -->
 					<div class="row gap-1">
 						<div id="embedding-landscape-chart-cell" class="cell-9">
-							<span class="label">Global Embedding Landscape</span>
+							<span class="label">Embedding Landscape</span>
 							<select id="protein-select" 
-									class="float-right small w-25"
+									class="float-right small w-25 mr-2"
 									data-role="select" data-clear-button="true"
 									data-filter="true" 
 									data-filter-placeholder="Search for protein ID..."
@@ -210,13 +210,14 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 							</select>
 							<div id="embedding-landscape-chart-container" data-role="resizer"></div>
 						</div>
-						<div id="structure-view-cell" class="cell-3">
-							<span id="structure-view-label" class="label" minimized>Function Prediction and Nearest Neighbor Structure</span>
+						<div id="structure-view-cell" class="cell-3" minimized>
 							<div class="grid">
-								<div class="row gap-1">
+								<span id="category-probabilities-chart-label" class="label" minimized>Category Probabilities</span>
+								<div class="row no-gap">
 									<div id="category-probabilities-chart-container" data-role="resizer">
 									</div>
 								</div>
+								<span id="structure-view-label" class="label">Nearest-Neighbor Structure</span>
 								<div class="row no-gap">
 									<p id="structure-view-info" class="p-2"></p>
 									<div id="structure-view-container" data-role="resizer">
@@ -229,7 +230,9 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 					<!-- Sequence alignment chart. -->
 					<div class="row gap-1">
 						<div class="cell-12">
-							<span class="label">Nearest Neighbor Sequence Alignment
+							<span class="label">Nearest-Neighbor Sequence Alignment
+								<code id="sequence-alignment-identity-label"
+									class="reduce-3 mb-1 va-middle"></code>
 								<code class="reduce-3 ml-2 va-middle float-right">
 									<i class="fa-solid fa-square" style="color: #364B9A"></i>&nbsp;Match&nbsp;
 									<i class="fa-solid fa-square" style="color: #A01813"></i>&nbsp;Mismatch&nbsp;
