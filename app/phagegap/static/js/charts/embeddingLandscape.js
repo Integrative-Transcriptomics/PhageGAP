@@ -162,7 +162,7 @@ export class EmbeddingLandscape extends Chart {
 		option.series.push({
 			type: "scatter",
 			name: "User Data",
-			symbolSize: 10,
+			symbolSize: 8,
 			itemStyle: {
 				color: NA_COLOR,
 				borderColor: "black",
