@@ -174,7 +174,6 @@ td {
 #category-probabilities-chart-container {
 	height: 18vh;
 	width: 27vw;
-	margin-bottom: 2vh;
 	background: var(--bg-color-2);
 	border-radius: 3px;
 }
@@ -200,6 +199,10 @@ td {
 	width: auto;
 	background: #f7f9fccc;
 	border-radius: 3px;
+}
+
+#sequence-alignment-identity-label {
+	color: #ffffff;
 }
 
 #genomic-context-chart-container {
