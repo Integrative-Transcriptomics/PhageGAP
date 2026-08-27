@@ -133,17 +133,14 @@ def align_sequences(seq1: str, seq2: str) -> tuple[str, str]:
 		A tuple containing the aligned sequences with the highest alignment score.
 	"""
 	aligner = Align.PairwiseAligner()
-	aligner.substitution_matrix = substitution_matrices.load("BLOSUM62")
+	aligner.substitution_matrix = substitution_matrices.load("PAM250")
 	alignment = aligner.align(seq1, seq2)
 	identity = _compute_identity(alignment[0][0], alignment[0][1])
 
-	if identity >= 0.75:
-		aligner.substitution_matrix = substitution_matrices.load("BLOSUM90")
+	if identity >= 0.80:
+		aligner.substitution_matrix = substitution_matrices.load("PAM30 ")
 		alignment = aligner.align(seq1, seq2)
-	elif identity < 0.30:
-		aligner.substitution_matrix = substitution_matrices.load("BLOSUM50")
-		alignment = aligner.align(seq1, seq2)
-	return alignment[0][0], alignment[0][1]
+	return alignment[0][0], alignment[0][1], round(identity * 100, 2)
 
 
 def _compute_identity(seq1: str, seq2: str) -> float:
