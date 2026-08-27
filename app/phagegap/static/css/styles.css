@@ -201,10 +201,6 @@ td {
 	border-radius: 3px;
 }
 
-#sequence-alignment-identity-label {
-	color: #ffffff;
-}
-
 #genomic-context-chart-container {
 	height: 10vh;
 	width: auto;
