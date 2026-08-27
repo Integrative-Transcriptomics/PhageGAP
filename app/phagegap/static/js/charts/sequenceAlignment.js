@@ -119,16 +119,12 @@ export class SequenceAlignment extends Chart {
 		if (identity === null || identity === undefined) {
 			label.innerHTML = "";
 		} else {
-			// Remove previous color classes.
-			label.classList.remove("bg-green");
-			label.classList.remove("bg-orange");
-			label.classList.remove("bg-red");
 			if (identity > 40) {
-				label.classList.add("bg-dark-green");
+				label.style.backgroundColor = "#BBDDBB"; // Pale green.
 			} else if (identity < 20) {
-				label.classList.add("bg-dark-red");
+				label.style.backgroundColor = "#FFBBCC"; // Pale red.
 			} else {
-				label.classList.add("bg-drak-orange");
+				label.style.backgroundColor = "#EEEEBB"; // Pale yellow.
 			}
 			label.innerHTML = `Identity: ${identity}%`;
 		}
