@@ -107,6 +107,16 @@ export function initApp() {
 		document.getElementById("structure-view-container"),
 	);
 
+	// Initialize selection propagation.
+	Metro.getPlugin("#protein-select", "select").options.onChange = function (
+		value,
+	) {
+		selectedId.setValue(value[0]); // Update the selected protein ID when a new option is selected from the dropdown.
+	};
+	Metro.getPlugin("#protein-select", "select").options.onClear = function () {
+		selectedId.setValue(null); // Clear the selected protein ID when the selection is cleared from the dropdown.
+	};
+
 	// Initialize click handler for the embedding landscape and genomic context chart.
 	embeddingLandscape.echart.on("click", (params) => {
 		if (params.seriesName === "User Data") {
@@ -117,7 +127,6 @@ export function initApp() {
 			} else if (params.componentType === "markLine") {
 				// Update the nearest neighbor protein when a nearest neighbor line is clicked.
 				nnId.setValue(params.data.name);
-				embeddingLandscape.highlightNearestNeighbor(params.dataIndex);
 			} else {
 				return; // Ignore clicks on other components of the chart.
 			}
@@ -259,6 +268,10 @@ function handleNearestNeighborChange() {
 	// Extract current selection data.
 	const currentSelection = userdataTable.entry(selectedId.getValue());
 	let nnProteinId = nnId.getValue();
+	let nnIndex = nearestNeighbors[currentSelection.protein_ID].findIndex((nn) => nn.protein_ID === nnProteinId);
+	
+	// Highlight the nearest neighbor in the embedding landscape chart.
+	embeddingLandscape.highlightNearestNeighbor(nnIndex);
 
 	// Request structure data of the nearest neighbor protein from the server and update the structure view and alignment chart accordingly.
 	var formData = new FormData();
@@ -569,12 +582,6 @@ function processUserData(data) {
 	promiseUserdataTable(data).then(() => {
 		// Update the selection search dropdown with protein IDs from the user-submitted data table.
 		const proteinSelectPlugin = Metro.getPlugin("#protein-select", "select");
-		proteinSelectPlugin.options.onChange = function (value) {
-			selectedId.setValue(value[0]); // Update the selected protein ID when a new option is selected from the dropdown.
-		};
-		proteinSelectPlugin.options.onClear = function (value) {
-			selectedId.setValue(null); // Clear the selected protein ID when the selection is cleared from the dropdown.
-		};
 		proteinSelectPlugin.reset(); // Clear existing options in the selection dropdown.
 		var proteinIds = userdataTable.table.array("protein_ID");
 		proteinIds.forEach((id) => {
@@ -582,7 +589,6 @@ function processUserData(data) {
 		});
 		proteinSelectPlugin.clear();
 		
-
 		// Update the embedding landscape chart to reflect the newly loaded user-submitted data.
 		embeddingLandscape.update();
 
@@ -671,22 +677,53 @@ async function restoreSession() {
 		const content = await util.decompress(compressed, "gzip");
 
 		const sessionData = JSON.parse(content);
-		if (typeof sessionData.features == 'string') {
-			sessionData.features = JSON.parse(sessionData.features);
-			processFeatures(sessionData.features);
-		}
-		if (typeof sessionData.userdata == 'string') {
-			sessionData.userdata = JSON.parse(sessionData.userdata);
-			processUserData(sessionData.userdata);
-		}
 
-		// Check if the value of selected in the session data is valid and exists in the user-submitted data table.
-		if (sessionData.selected && userdataTable && userdataTable.entry(sessionData.selected) !== null) {
-			Metro.getPlugin("#protein-select", "select").val(sessionData.selected);
-		} else {
-			categoryProbabilities.state.setValue("Click on a User Data point to view function predictions.");
-			sequenceAlignment.state.setValue("Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.");
-		}
+		new Promise((resolve, reject) => {
+			// Load features.
+			if (typeof sessionData.features == 'string') {
+				sessionData.features = JSON.parse(sessionData.features);
+				processFeatures(sessionData.features);
+			}
+
+			// Load user-submitted data.
+			if (typeof sessionData.userdata == "string") {
+				sessionData.userdata = JSON.parse(sessionData.userdata);
+				processUserData(sessionData.userdata);
+			}
+
+			// Load nearest neighbor information.
+			if (typeof sessionData.nearestNeighbors == "object") {
+				Object.assign(nearestNeighbors, sessionData.nearestNeighbors);
+			}
+
+			resolve();
+		}).then(() => {
+			// Check if the value of selected in the session data is valid and exists in the user-submitted data table.
+			if (
+				sessionData.selectedUserData &&
+				userdataTable &&
+				userdataTable.entry(sessionData.selectedUserData) !== null
+			) {
+				Metro.getPlugin("#protein-select", "select").val(sessionData.selectedUserData);
+			} else {
+				categoryProbabilities.state.setValue(
+					"Click on a User Data point to view function predictions.",
+				);
+				sequenceAlignment.state.setValue(
+					"Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.",
+				);
+			}
+
+			// Check if the value of nearest neighbor in the session data is valid and exists in the user-submitted data table.
+			if (
+				sessionData.selectedNearestNeighbor &&
+				nearestNeighbors &&
+				metadataTable &&
+				metadataTable.entry(sessionData.selectedNearestNeighbor) !== null
+			) {
+				nnId.setValue(sessionData.selectedNearestNeighbor);
+			}
+		});
 	} catch (error) {
 		console.error(error);
 		util.displayNotification(
@@ -741,8 +778,10 @@ function downloadSession() {
 	// Create a JSON object containing the session data.
 	const sessionJSON = JSON.stringify(
 		{
-			selected: selectedId.getValue(),
+			selectedUserData: selectedId.getValue(),
+			selectedNearestNeighbor: nnId.getValue(),
 			userdata: userdataRecords,
+			nearestNeighbors: nearestNeighbors,
 			features: featureRecords,
 			time: new Date().toISOString(),
 			version: VERSION,

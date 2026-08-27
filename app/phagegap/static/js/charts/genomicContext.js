@@ -120,13 +120,6 @@ export class GenomicContext extends Chart {
 		this.state.setValue(null);
 		this.echart.setOption(option);
 		this.zoom();
-
-		// Display user notification about successful loading of the genomic context chart.
-		displayNotification(
-			`Loaded ${this.features.length} features into <code>Genomic Context</code>.`,
-			"Success",
-			"success",
-		);
 	}
 
 	zoom() {
@@ -273,6 +266,12 @@ export function populateFeatures(data) {
 		try {
 			// Fill the table with the provided data using Arquero.
 			featureTable = new ArqueroTable(data);
+			// Display user notification about successful loading of the genomic context chart.
+			displayNotification(
+				`Loaded ${featureTable.size()} features for <code>Genomic Context</code>.`,
+				"Success",
+				"success",
+			);
 			resolve();
 		} catch (error) {
 			console.error(error); // This should not fail.
