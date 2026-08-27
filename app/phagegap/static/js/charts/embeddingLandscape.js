@@ -243,7 +243,7 @@ export class EmbeddingLandscape extends Chart {
 					},
 					lineStyle: {
 						color: "#000000",
-						type: isFirst ? "solid" : "dashed",
+						type: isFirst ? "solid" : "dotted",
 						width: 1,
 					},
 				},
@@ -356,12 +356,10 @@ export class EmbeddingLandscape extends Chart {
 			const info = userdataTable.entry(params.data.name);
 			const nearestNeighbor = nearestNeighbors[params.data.name][0];
 			var content = `<code>ID: ${params.data.name}</code><br>`;
-			let top1Category = info.top1;
-			let top1Probability = (info["P(top1)"] * 100).toFixed(2);
-			let top1Topcategory = SUBCATEGORY_MAP[top1Category];
+			let probability = (info["P(top1)"] * 100).toFixed(2);
 			content += `<table border=1 frame=void rules=rows>`;
 			content += `<tr><td>Description:</td><td><p style="max-width: 300px; font-size: small;">${info.description}</p></td></tr>`;
-			content += `<tr><td>Predicted Category:</td><td>${SUBCATEGORY_MAP[top1Topcategory]} › ${top1Category} (${top1Probability}%)</td></tr>`;
+			content += `<tr><td>Predicted Category:</td><td>${SUBCATEGORY_MAP[info.top1]} › ${info.top1} (${probability}%)</td></tr>`;
 			content += `<tr><td>Nearest Neighbor:</td><td>${nearestNeighbor.protein_ID} d<sub>PCA</sub>=${nearestNeighbor.pca_distance.toFixed(2)}</td></tr>`;
 			content += `</table>`;
 			if (selectedId.getValue() !== params.data.name) {
