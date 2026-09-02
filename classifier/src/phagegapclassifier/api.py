@@ -127,7 +127,6 @@ def _predict(sequence_text: str) -> tuple[pd.DataFrame, dict]:
 		pca = _get_extension("pca")
 		tsne = _get_extension("tsne")
 		kdtree = _get_extension("kdtree")
-		knn = _get_extension("knn")
 	except Exception as e:
 		logger.exception(f"Failed to load required extensions for prediction: {str(e)}")
 		raise RuntimeError(f"Failed to load required extensions for prediction: {str(e)}") from e
