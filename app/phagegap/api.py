@@ -202,6 +202,8 @@ def serve_classifier_prediction():
 		# Prepare user data structure to store results.
 		# Note: It is important to duplicate the protein ID as key for later merging.
 		user_results = { "records": { } }
+		# Reset sequence text: It will be reconstructed with cleaned IDs.
+		sequence_text = ""
 		for record in sequence_records:
 			# Clean description.
 			record.description = str(record.description).replace(str(record.id), "").strip()
@@ -216,6 +218,7 @@ def serve_classifier_prediction():
 				"description": record.description,
 				"sequence": str(record.seq)
 			}
+			sequence_text += f">{record.id} {record.description}\n{str(record.seq)}\n"
 
 		''' TODO: Legacy code that uses SocketIO for communication with client.
 		socketio.emit(
