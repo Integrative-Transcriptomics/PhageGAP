@@ -77,7 +77,7 @@ export function initApp() {
 	Metro.init();
 
 	// Populate the about page index.
-	indexAbout();
+	indexUsageTab();
 
 	// Initialize charts.
 	embeddingLandscape = new EmbeddingLandscape(
@@ -176,14 +176,14 @@ export function initApp() {
  * If the heading child element of the section is `h1`, no indentation is applied to the link. For all
  * other heading levels, an indentation is added to visually distinguish them in the navigation index.
  */
-function indexAbout() {
-	var aboutNavIndex = $("#about-nav-index");
-	$(".about-section").each(function () {
+function indexUsageTab() {
+	var usageNavIndex = $("#usage-nav-index");
+	$(".usage-section").each(function () {
 		var sectionId = $(this).attr("id");
 		var heading = $(this).find("h1, h2, h3, h4, h5, h6").first();
 		var linkText = heading.text();
 		var indent = heading.is("h1") ? "" : "class='ml-4 text-light'";
-		aboutNavIndex.append(
+		usageNavIndex.append(
 			`<li><a href="#${sectionId}" ${indent}>${linkText}</a></li>`,
 		);
 	});
