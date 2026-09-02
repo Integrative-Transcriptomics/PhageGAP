@@ -2,8 +2,8 @@ import { Chart } from "./chart.js";
 import { NA_COLOR } from "../constants.js";
 
 const ALIGNMENT_COLORS = {
-	M: "#364B9A",
-	X: "#A01813",
+	M: "#4477BB",
+	X: "#CC4466",
 	D: "#DDDDDD",
 	I: "#BBBBBB",
 	NA: "#F7F9FC",
@@ -235,7 +235,6 @@ export class SequenceAlignment extends Chart {
 					textVerticalAlign: "middle",
 					fontFamily: "monospace",
 					fontSize: 11,
-					fill: "#111",
 				},
 			});
 		}
