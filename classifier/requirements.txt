@@ -1,6 +1,6 @@
 numpy==1.26.4
 scipy==1.16
-pandas==3.0.3
+pandas==3.0.5
 biopython==1.88
 opentsne==1.0.4
 scikit-learn==1.7.2

@@ -10,3 +10,4 @@ app/phagegap/__pycache__/*
 secrets/*
 .vscode
 .local
+*.tar.gz
