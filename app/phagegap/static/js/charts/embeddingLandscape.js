@@ -111,11 +111,26 @@ export class EmbeddingLandscape extends Chart {
 				show: true,
 				...backgroundStyle,
 			},
+			// dataZoom components are only used for drag actions.
+			dataZoom: [
+				{
+					id: "embeddingLandscapeDragX",
+					type: "inside",
+					xAxisIndex: 0,
+					zoomOnMouseWheel: false,
+				},
+				{
+					id: "embeddingLandscapeDragY",
+					type: "inside",
+					yAxisIndex: 0,
+					zoomOnMouseWheel: false,
+				},
+			],
 			toolbox: {
 				left: "left",
 				top: "top",
 				feature: {
-					dataZoom: {},
+					dataZoom: { },
 				},
 				padding: 5,
 				...backgroundStyle,
@@ -351,22 +366,34 @@ export class EmbeddingLandscape extends Chart {
 	 */
 	observeZoom() {
 		this.echart.on("dataZoom", (params) => {
-			const maxRange = 300; // Hard coded based on initial chart range. Adjust as necessary for new data.
-			const xRange = params.batch[0].endValue - params.batch[0].startValue; // Get the current x-axis range.
-			const yRange = params.batch[1].endValue - params.batch[1].startValue; // Get the current y-axis range.
-			const zoomLevel = (Math.min(xRange, yRange) / maxRange).toFixed(2); // Calculate the zoom level based on the smaller of the two ranges.
-			let newSymbolSize;
-			if (isNaN(zoomLevel)) {
-				newSymbolSize = 1; // Default symbol size if zoom level is not a number.
-			} else {
-				newSymbolSize = Math.min(4, Math.round(1 / zoomLevel)); // Adjust symbol size inversely proportional to zoom level, capped at a maximum size of 6.
+			// Check if the event parameters carries a batch property.
+			if (params.batch) {
+
+				// Catch 'dataZoom' events fired by the chart option's dataZoom components (only intended for drag actions).
+				if (params.batch.some((batch) => batch.dataZoomId === "embeddingLandscapeDragX"
+					|| batch.dataZoomId === "embeddingLandscapeDragY")) {
+					return;
+				}
+
+				const maxRange = 300; // Hard coded based on initial chart range. Adjust as necessary for new data.
+				const xRange = params.batch[0].endValue - params.batch[0].startValue; // Get the current x-axis range.
+				const yRange = params.batch[1].endValue - params.batch[1].startValue; // Get the current y-axis range.
+				const zoomLevel = (Math.min(xRange, yRange) / maxRange).toFixed(2); // Calculate the zoom level based on the smaller of the two ranges.
+				var newSymbolSize;
+
+				if (isNaN(zoomLevel)) {
+					newSymbolSize = 1; // Default symbol size if zoom level is not a number.
+				} else {
+					newSymbolSize = Math.min(4, Math.round(1 / zoomLevel)); // Adjust symbol size inversely proportional to zoom level, capped at a maximum size of 6.
+				}
+
+				this.echart.setOption({
+					series: this.echart.getOption().series.map((series) => ({
+						...series,
+						symbolSize: series.name == "User Data" ? 8 : newSymbolSize,
+					})),
+				});
 			}
-			this.echart.setOption({
-				series: this.echart.getOption().series.map((series) => ({
-					...series,
-					symbolSize: series.name == "User Data" ? 10 : newSymbolSize,
-				})),
-			});
 		});
 	}
 
@@ -413,26 +440,5 @@ export class EmbeddingLandscape extends Chart {
 			content += `</table>`;
 		}
 		return content;
-	}
-
-	/**
-	 * Toggles the visibility of the legend in the embedding landscape chart.
-	 *
-	 * Currently not in use.
-	 */
-	#toggleLegend() {
-		if (this.echart.getOption().legend[0].show) {
-			this.echart.setOption({
-				legend: {
-					show: false,
-				},
-			});
-		} else {
-			this.echart.setOption({
-				legend: {
-					show: true,
-				},
-			});
-		}
 	}
 }
