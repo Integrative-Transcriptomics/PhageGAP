@@ -145,8 +145,8 @@ export function initApp() {
 	document.getElementById("session-reload-button").onclick = restoreSession;
 	document.getElementById("toolbar-genomic-context-button").onclick =
 		requestFeatures;
-	document.getElementById("toolbar-maximize-structure-button").onclick =
-		toggleMaximizeStructureView;
+	/*document.getElementById("toolbar-maximize-structure-button").onclick =
+		toggleMaximizeStructureView;*/
 	document.getElementById("toolbar-screenshot-button").onclick =
 		captureScreenshot;
 	document.getElementById("toolbar-download-results-button").onclick =

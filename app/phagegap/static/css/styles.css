@@ -215,22 +215,23 @@ hr {
 }
 
 #embedding-landscape-chart-container {
-	height: 60vh;
-	width: 73vw;
+	height: 70vh;
+	width: auto;
 	border-radius: 3px;
 }
 
 #category-probabilities-chart-container {
 	height: 18vh;
-	width: 27vw;
+	width: auto;
 	background: var(--bg-color-2);
 	border-radius: 3px;
+	cursor: default;
 }
 
 #structure-view-container {
 	height: 40vh;
-	width: 27vw;
-	background: var(--bg-color-2);
+	width: auto;
+	background: #f7f9fccc;
 	border: 1px solid var(--bg-color-3);
 	border-radius: 3px;
 }
@@ -245,7 +246,7 @@ hr {
 }
 
 #sequence-alignment-chart-container {
-	height: 9vh;
+	height: 10vh;
 	width: auto;
 	background: #f7f9fccc;
 	border-radius: 3px;

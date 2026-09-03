@@ -151,9 +151,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 						<button id="toolbar-genomic-context-button" class="small ml-1">
 							<i class="fa-solid fa-dna"></i> Add Genomic Context
 						</button>
-						<button id="toolbar-maximize-structure-button" class="small ml-1">
+						<!--<button id="toolbar-maximize-structure-button" class="small ml-1">
 							<i class="fa-solid fa-picture-in-picture"></i> Maximize Structure View
-						</button>
+						</button>-->
 						<button id="toolbar-screenshot-button" class="small ml-1">
 							<i class="fa-solid fa-camera"></i> Screenshot
 						</button>
@@ -220,50 +220,49 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 				<div id="app-area">
 					<!-- Embedding landscape chart. -->
 					<div class="row gap-1">
-						<div id="embedding-landscape-chart-cell" class="cell-9">
-							<span class="label">Embedding Landscape</span>
-							<select id="protein-select" 
-									class="float-right small w-25 mr-2"
-									data-role="select" data-clear-button="true"
-									data-filter="true"
-									data-prepend="Selected Protein:"
-									data-filter-placeholder="Search for protein ID..."
-									data-placeholder="None"
-									data-use-placeholder="true">
-							</select>
-							<div id="embedding-landscape-chart-container" data-role="resizer"></div>
-						</div>
-						<div id="structure-view-cell" class="cell-3" minimized>
-							<div class="grid">
-								<span id="category-probabilities-chart-label" class="label" minimized>Category Probabilities</span>
-								<div class="row no-gap">
-									<div id="category-probabilities-chart-container" data-role="resizer">
+						<div data-role="splitter" data-split="vertical" data-split-sizes="72%, 28%">
+							<div id="embedding-landscape-chart-cell" class="cell-auto w-min-25 pr-1">
+								<span class="label">Embedding Landscape</span>
+								<select id="protein-select" 
+										class="float-right small w-25 mr-2"
+										data-role="select" data-clear-button="true"
+										data-filter="true"
+										data-prepend="Selected Protein:"
+										data-filter-placeholder="Search for protein ID..."
+										data-placeholder="None"
+										data-use-placeholder="true">
+								</select>
+								<div id="embedding-landscape-chart-container" data-role="resizer"></div>
+							</div>
+							<div id="structure-view-cell" class="cell w-min-25 pl-1" minimized>
+								<div class="grid">
+									<span id="category-probabilities-chart-label" class="label" minimized>Prediction Summary</span>
+									<div class="row no-gap">
+										<div id="category-probabilities-chart-container" data-role="resizer">
+										</div>
+									</div>
+									<span id="structure-view-label" class="label">Nearest-Neighbor Structure</span>
+									<div class="row no-gap">
+										<p id="structure-view-info" class="p-2"></p>
+										<div id="structure-view-container" data-role="resizer">
+										</div>	
+									</div>
+									<!-- Sequence alignment chart. -->
+									<div class="row gap-1">
+											<span class="label">Nearest-Neighbor Sequence Alignment
+												<code id="sequence-alignment-identity-label"
+													class="reduce-3 mb-1 va-middle"></code>
+												<code class="reduce-3 mr-2 va-middle float-right">
+													<i class="fa-solid fa-square" style="color: #4477BB"></i>&nbsp;Match&nbsp;
+													<i class="fa-solid fa-square" style="color: #CC4466"></i>&nbsp;Mismatch&nbsp;
+													<i class="fa-solid fa-square" style="color: #BBBBBB"></i>&nbsp;InDel&nbsp;
+													<i class="fa-regular fa-square" style="color: #BBBBBB"></i>&nbsp;Gap
+												</code>
+											</span>
+											<div id="sequence-alignment-chart-container"></div>
 									</div>
 								</div>
-								<span id="structure-view-label" class="label">Nearest-Neighbor Structure</span>
-								<div class="row no-gap">
-									<p id="structure-view-info" class="p-2"></p>
-									<div id="structure-view-container" data-role="resizer">
-									</div>	
-								</div>
 							</div>
-						</div>
-					</div>
-
-					<!-- Sequence alignment chart. -->
-					<div class="row gap-1">
-						<div class="cell-12">
-							<span class="label">Nearest-Neighbor Sequence Alignment
-								<code id="sequence-alignment-identity-label"
-									class="reduce-3 mb-1 va-middle"></code>
-								<code class="reduce-3 ml-2 va-middle float-right">
-									<i class="fa-solid fa-square" style="color: #4477BB"></i>&nbsp;Match&nbsp;
-									<i class="fa-solid fa-square" style="color: #CC4466"></i>&nbsp;Mismatch&nbsp;
-									<i class="fa-solid fa-square" style="color: #BBBBBB"></i>&nbsp;InDel&nbsp;
-									<i class="fa-regular fa-square" style="color: #BBBBBB"></i>&nbsp;Gap
-								</code>
-							</span>
-							<div id="sequence-alignment-chart-container"></div>
 						</div>
 					</div>
 
