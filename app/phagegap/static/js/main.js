@@ -288,8 +288,8 @@ function handleNearestNeighborChange() {
 		})
 		.then((response) => {
 			sequenceAlignment.fill(
-				response.data.sequence_alignment[0],
-				response.data.sequence_alignment[1],
+				response.data.sequence_alignment[0], // Sequence of the nearest neighbor protein.
+				response.data.sequence_alignment[1], // Sequence of the selected protein.
 				nnProteinId,
 				currentSelection.protein_ID,
 			);

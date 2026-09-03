@@ -4,7 +4,7 @@ import { NA_COLOR } from "../constants.js";
 const ALIGNMENT_COLORS = {
 	M: "#4477BB",
 	X: "#CC4466",
-	D: "#DDDDDD",
+	D: "#BBBBBB",
 	I: "#BBBBBB",
 	NA: "#F7F9FC",
 };
@@ -33,8 +33,8 @@ export class SequenceAlignment extends Chart {
 					axis: "x",
 				},
 				formatter: (params) => {
-					const p1 = params[0].data;
-					const p2 = params[1].data;
+					const p1 = params[1].data; // Sequence 1 data point, due to inverted y-axis.
+					const p2 = params[0].data;
 					return `
 					<table border=1 frame=void rules=rows>
 						<tr>
@@ -89,6 +89,7 @@ export class SequenceAlignment extends Chart {
 				axisLabel: {
 					fontSize: 11,
 				},
+				inverse: true,
 			},
 			series: [
 				{
