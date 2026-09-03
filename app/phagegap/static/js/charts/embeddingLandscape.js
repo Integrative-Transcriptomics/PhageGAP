@@ -164,7 +164,6 @@ export class EmbeddingLandscape extends Chart {
 			name: "User Data",
 			symbolSize: 8,
 			itemStyle: {
-				color: NA_COLOR,
 				borderColor: "black",
 				borderWidth: 0.8,
 				opacity: 1,
@@ -196,6 +195,7 @@ export class EmbeddingLandscape extends Chart {
 	 * @param {object} clicked An entry from the `userdataTable` corresponding to the clicked data point in the embedding landscape chart.
 	 */
 	highlight(clicked) {
+		// Construct data for nearest-neighbor connecting lines.
 		var d = [];
 		var isFirst = true;
 		for (const nn of nearestNeighbors[clicked.protein_ID]) {
@@ -217,7 +217,7 @@ export class EmbeddingLandscape extends Chart {
 						},
 						rich: {
 							sub: {
-								fontSize: 9,
+								fontSize: 8,
 								verticalAlign: "bottom", // Shifts text downward relative to baseline
 								padding: [0, 0, -2, 0], // Fine-tune vertical position [top, right, bottom, left]
 							},
@@ -252,19 +252,38 @@ export class EmbeddingLandscape extends Chart {
 			if (isFirst) isFirst = false;
 		}
 
-		// Set mark line data of "User Data" series to connect the clicked point to its nearest neighbor.
+		// Update the "User Data" series option.
+		const option = this.echart.getOption();
+		const updatedUserDataSeries = option.series.map((series) => {
+			if (series.name !== "User Data") {
+				return series; // Do not change series that are not "User Data".
+			} else {
+				return {
+					...series,
+					// Reduce the opacity of unselected points to emphasize the selected protein and its nearest neighbors.
+					data: series.data.map((point) => {
+						const isSelected = point.name === clicked.protein_ID;
+						return {
+							...point,
+							itemStyle: {
+								...point.itemStyle,
+								opacity: isSelected ? 1 : 0.33,
+							},
+						};
+					}),
+					// Updates the mark line data to show lines connecting the selected protein to its nearest neighbors.
+					markLine: {
+						...series.markLine,
+						data: d,
+					},
+				};
+
+			}
+		});
+
+		// Set the updated series back to the chart option and apply it to the ECharts instance.
 		this.echart.setOption({
-			series: this.echart.getOption().series.map((series) => {
-				if (series.name === "User Data") {
-					return {
-						...series,
-						markLine: {
-							data: d,
-						},
-					};
-				}
-				return series;
-			}),
+			series: updatedUserDataSeries,
 		});
 
 		// Highlight the first nearest neighbor (first in the list) by default.
@@ -290,19 +309,37 @@ export class EmbeddingLandscape extends Chart {
 	}
 
 	resetHighlight() {
-		// Clear the mark line data of the "User Data" series to remove any existing highlight.
+		// Update the "User Data" series option.
+		const option = this.echart.getOption();
+		const updatedUserDataSeries = option.series.map((series) => {
+			if (series.name !== "User Data") {
+				return series; // Do not change series that are not "User Data".
+			} else {
+				return {
+					...series,
+					// Reduce the opacity of unselected points to emphasize the selected protein and its nearest neighbors.
+					data: series.data.map((point) => {
+						return {
+							...point,
+							itemStyle: {
+								...point.itemStyle,
+								opacity: 1,
+							},
+						};
+					}),
+					// Updates the mark line data to show lines connecting the selected protein to its nearest neighbors.
+					markLine: {
+						...series.markLine,
+						data: [],
+					},
+				};
+
+			}
+		});
+
+		// Set the updated series back to the chart option and apply it to the ECharts instance.
 		this.echart.setOption({
-			series: this.echart.getOption().series.map((series) => {
-				if (series.name === "User Data") {
-					return {
-						...series,
-						markLine: {
-							data: [],
-						},
-					};
-				}
-				return series;
-			}),
+			series: updatedUserDataSeries,
 		});
 	}
 
