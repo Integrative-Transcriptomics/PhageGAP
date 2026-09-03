@@ -16,6 +16,7 @@ export class StructureView {
 			opacity: 0,
 			antialias: true,
 			cartoonQuality: 6,
+			backgroundColor: "#f7f9fc",
 		});
 	}
 
