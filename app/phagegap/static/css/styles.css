@@ -16,7 +16,7 @@
 	--gradient-blue-2: #1567e2;
 	--gradient-purple-1: #5534e5;
 	--gradient-purple-2: #7c3fe6;
-	--shadow-clr: #0624651a;
+	--shadow-clr: rgba(6, 36, 101, 0.2);
 	--alert: #ffcc00;
 	--warning: #cb0e40;
 
@@ -36,10 +36,30 @@ body {
 	color: var(--text-color);
 }
 
+a {
+	color: var(--icon-color);
+}
+
+a:hover {
+	color: var(--gradient-blue-2) !important;
+	text-decoration: underline;
+	transition: 0.2s;
+}
+
+a:visited {
+	color: var(--icon-color);
+}
+
 td {
   padding-left: 8px;
   vertical-align: top;
   text-align: justify;
+}
+
+hr {
+	border-color: var(--bg-color-2);
+	color: var(--bg-color-2);
+	background-color: var(--bg-color-2);
 }
 
 .centered {
@@ -58,12 +78,26 @@ td {
 	font-size: 1rem;
 }
 
+.help-button {
+	background: none !important;
+	color: var(--gradient-blue-2) !important;
+	border: none !important;
+	padding: 0px !important;
+	opacity: 0.8;
+}
+
+.help-button:hover {
+	opacity: 1;
+	color: var(--gradient-blue-1) !important;
+	transition: 0.3s;
+}
+
 .styled-button {
 	background: var(--icon-color);
 	color: #fff;
 	border: none;
 	border-radius: 4px;
-	padding: 10px 20px;
+	padding: 0px 10px !important;
 	font-size: 1rem;
 	cursor: pointer;
 }
@@ -71,20 +105,6 @@ td {
 .styled-button:hover {
 	background: var(--gradient-blue-2);
 	transition: 0.3s;
-}
-
-.undecorated-button {
-	background: none;
-	border: none;
-	padding: 0;
-	margin: 0;
-	text-decoration: none;
-	cursor: pointer;
-}
-
-.undecorated-button:hover {
-	background: none;
-	text-decoration: underline !important;
 }
 
 .label {
@@ -96,11 +116,13 @@ td {
 .tabs-material-wrapper {
 	background-color: var(--bg-color-3);
 	color: var(--text-light-color);
-	box-shadow: 0 2px 4px var(--bg-color-2);
+	box-shadow: 0 2px 2px lightgrey;
+	z-index: 1000;
 }
 
-.tabs-material li {
+.tabs-material li a {
 	font-family: Arial, Helvetica, sans-serif;
+	text-transform: none !important;
 	color: var(--text-light-color);
 }
 
@@ -117,10 +139,10 @@ td {
 
 	background: linear-gradient(
 		90deg,
-		#061f63 0%,
-		#061f63 58%,
-		#6f3be8 68%,
-		#7c3fe6 100%
+		var(--icon-color) 0%,
+		var(--icon-color) 56%,
+		var(--gradient-purple-1) 60%,
+		var(--gradient-purple-2) 100%
 	);
 
 	-webkit-background-clip: text;
@@ -161,8 +183,35 @@ td {
 	font-size: small !important;
 }
 
-#data-input {
-	padding: 5px;
+#home-relevance {
+	background-image: url("../resources/media/phage-bg.png");
+	background-size: contain;
+	background-position: right;
+	background-repeat: no-repeat;
+}
+
+#home-relevance-image-credits {
+	color: var(--text-color) !important;
+	opacity: 0.9;
+	position: absolute;
+	bottom: 2px;
+	right: 2px;
+}
+
+#home-relevance-image-credits:hover {
+	opacity: 1;
+	background: rgba(255, 255, 255, 0.5);
+	backdrop-filter: blur(3px);
+	-webkit-backdrop-filter: blur(3px);
+	border-radius: 2px;
+}
+
+#home-relevance-image-credits a {
+	color: inherit !important;
+}
+
+#input-info {
+	background: rgb(251, 251, 251);
 }
 
 #embedding-landscape-chart-container {
@@ -182,6 +231,7 @@ td {
 	height: 40vh;
 	width: 27vw;
 	background: var(--bg-color-2);
+	border: 1px solid var(--bg-color-3);
 	border-radius: 3px;
 }
 
@@ -208,14 +258,14 @@ td {
 	border-radius: 3px;
 }
 
-#about {
+#usage {
 	min-height: calc(100vh - 5rem);
 	background: var(--bg-color-2);
 	color: var(--text-color);
 	padding: 1rem;
 }
 
-.about-nav {
+.usage-nav {
 	position: sticky;
 	top: 4rem;
 	background: var(--bg-color-1);
@@ -225,27 +275,27 @@ td {
 	box-shadow: 0 8px 24px rgba(6, 36, 101, 0.1);
 }
 
-.about-nav h3 {
+.usage-nav h3 {
 	color: var(--text-color);
 }
 
-.about-nav ul {
+.usage-nav ul {
 	list-style: none;
 	padding-left: 0;
 }
 
-.about-nav li a {
+.usage-nav li a {
 	color: var(--icon-color);
 	margin-bottom: 0.5rem;
 	cursor: pointer;
 }
 
-.about-nav li a:hover {
+.usage-nav li a:hover {
 	color: var(--gradient-blue-2);
 	transition: 0.3s;
 }
 
-.about-content {
+.usage-content {
 	background: var(--bg-color-1);
 	border: 1px solid var(--bg-color-3);
 	border-radius: 4px;
@@ -253,11 +303,16 @@ td {
 	box-shadow: 0 8px 24px rgba(6, 36, 101, 0.1);
 }
 
-.about-section {
+.usage-section {
 	margin-bottom: 2rem;
 }
 
-.about-section p {
+.usage-section p {
 	text-align: justify;
 	padding-right: 1rem;
+}
+
+#footer {
+	background: var(--bg-color-3);
+	color: var(--text-light2-color);
 }

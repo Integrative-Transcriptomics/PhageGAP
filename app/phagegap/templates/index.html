@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-PhageGap
+PhageGAP
 AUTHOR: Simon Hackl
 CONTACT: simon.hackl@uni-tuebingen.de
 
@@ -18,7 +18,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 -->
 <html>
 	<head>
-		<title>PhageGap</title>
+		<title>PhageGAP</title>
 		<!-- Provide meta information about the application. -->
 		<meta charset="utf-8" />
 		<meta name="csrf-token" content="{{ csrf_token }}" />
@@ -76,56 +76,77 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 	<body>
 		<ul data-role="materialtabs">
 			<li class="active">
-				<a href="#home"><span class="phagegap-logo-text">PhageGap</span></a>
+				<a href="#home">ABOUT</a>
 			</li>
 			<li id="classification-tab" disabled>
-				<a href="#classification">Function Classification</a>
+				<a href="#classification"><span class="phagegap-logo-text">PhageGAP</span></a>
 			</li>
 			<li>
-				<a href="#about">Help and Information</a>
+				<a href="#usage">USAGE</a>
 			</li>
 		</ul>
 
-		<!-- Index page of the web application. -->
+		<!-- Tab/UI of the index (about) page of the web application. -->
 		<div id="home">
 			<div class="grid">
-				<div class="row">
-					<div class="cell-3" style="display: flex; align-items: center; justify-content: center;">
-						<img
-							src="{{url_for('static', filename='resources/media/logo_1024.png')}}"
-							alt="The PhageGap logo"
-							style="width: 80%; height: auto; object-fit: contain;"
-						/>
+				<hr/>
+				<div class="row no-gap">
+					<div class="cell-12">
+						<div id="home-relevance" class="hero p-20">
+							<p class="text-just text-leader2 text-medium w-50">
+								<a href="https://www.ncbi.nlm.nih.gov/books/NBK493185/" target="_blank">Bacteriophages</a> are viruses that
+								infect bacteria and shape microbial communities.
+								Growing antibiotic resistance and advances in biotechnology have renewed interest in understanding how phages
+								infect, manipulate, and lyse their hosts.
+							</p>
+							<p class="text-just w-50">
+								Despite the rapid growth of phage genome data, current annotation approaches still rely largely on sequence
+								homology, and many predicted proteins remain hypothetical or poorly characterized.
+								This "<i>phage unknome</i>" limits mechanistic insight into host takeover and the discovery of proteins with
+								biotechnological potential.
+							</p>
+							<span id="home-relevance-image-credits" class="reduce-4 p-1">
+								Image: 
+								<a href="https://commons.wikimedia.org/wiki/File:Phage.jpg">
+									Graham Beards / Wikimedia Commons
+								</a>,
+								<a href="https://creativecommons.org/licenses/by-sa/3.0/">
+									CC BY-SA 3.0
+								</a>,
+								modified and colorized.
+							</span>
+						</div>
 					</div>
+				</div>
+				<hr/>
+				<div class="row no-gap">
+					<div class="cell-12">
+						<div id="home-description" class="hero p-20">
 
-					<div class="cell-8">
-						<div class="hero">
-							<h1>Phage Protein Function Prediction</h1>
-
-							<p class="text-just">
-								<code>PhageGap</code> uses protein language models to predict functional categories
-								for phage proteins and explore their relationships within an interactive protein
-								embedding landscape.
+							<p class="text-just text-leader2 text-medium w-50 flex-right">
+								PhageGAP predicts curated functional classes for phage proteins using protein language model embeddings.
 							</p>
 
-							<p class="text-just">
-								Inspect predictions alongside nearest-neighbor proteins, sequence alignments,
-								structural information, and optional genomic context.
+							<p class="text-just w-50 flex-right">
+								Proteins are placed within an interactive embedding landscape of reference phage, bacterial, and viral 
+								proteins and identifies their nearest neighbors.
+								Sequence comparison, genomic context, and structural information can then be explored together to support
+								interpretation and hypothesis generation.
 							</p>
 						</div>
 					</div>
 				</div>
-				<hr />
 			</div>
+			{% include "footer.html" %}
 		</div>
 
-		<!-- UI to start functional classification. -->
+		<!-- Tab/UI for the functional part of the web application. -->
 		<div id="classification" class="pl-4 pr-4">
 			<div class="grid">
 
 				<!-- Toolbar. -->
-				<div class="row no-gap mt-2">
-					<div class="cell-12">
+				<div class="row no-gap">
+					<div class="cell-12 mt-2">
 						<button id="data-input-toggle" class="small"><i class="fa-solid fa-caret-down"></i> Data Input</button>
 						<button id="toolbar-genomic-context-button" class="small ml-1">
 							<i class="fa-solid fa-dna"></i> Add Genomic Context
@@ -145,49 +166,50 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 					</div>
 				</div>
 				
-				<!-- Input forms. -->
+				<!-- Input forms container. -->
 				<div id="data-input" data-role="collapse" data-duration=200 data-toggle-element="#data-input-toggle">
 					<!-- Input forms -->
 					<div class="row no-gap">
-						<div class="cell-9">
+						<div class="cell-12">
 							<div class="card">
 								<div class="card-header">
 									<span class="label">Provide Protein Sequence(s) in FASTA Format via Text and/or File Input</span>
 								</div>
-								<div class="card-content centered mb-3 mt-3">
+								<div class="card-content centered w-80-xl w-100-md mb-3 mt-3">
 									<textarea id="data-input-text" data-role="textarea" placeholder=">P03706 Endolysin OS=Escherichia phage lambda
 MVEINNQRKAFLDMLAWSEGTDNGRQKTRNHGYDVIVGGELFTDYSDHPRKLVTLNPKLK
 STGAGRYQLLSRWWDAYRKQLGLKDFSPKSQDAVALQQIKERGALPMIDRGDIRQAIDRC
 SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
-									&nbsp;
-									<b class="ml-2 mr-2">and/or</b>
-									&nbsp;
+									<b class="ml-3 mr-3">and/or</b>
 									<input id="data-input-file" type="file" data-button-title="Choose File" data-role="file" />
 								</div>
 								<div class="card-footer">
-									<button id="input-submit-button" class="flat-button small styled-button"><i class="fa-solid fa-upload"></i> Function Classification</button>
-									&nbsp;
-									<button id="session-reload-button" class="flat-button small styled-button"><i class="fa-solid fa-upload"></i> Reload Session</button>
+									<button id="input-submit-button" class="flat-button small styled-button"><i class="fa-solid fa-upload"></i> Function Prediction</button>
+									<button id="session-reload-button" class="flat-button small styled-button ml-3"><i class="fa-solid fa-upload"></i> Reload Session</button>
+									<button id="input-info-toggle" class="help-button ml-3"><i class="fa-solid fa-circle-question"></i></button>
 								</div>
-							</div>
-						</div>
-						<div class="cell-3">
-							<div class="card ml-2">
-								<div class="card-content bg-light">
-									<p class="reduce-2 text-just">
-										&bull; <b>Input must be in FASTA format.</b> Line length is unrestricted; ambiguous amino acids are converted to <code>X</code>.
-										The first header field after <code>&gt;</code> is used as the protein ID; remaining header text is treated as description.
-										Text and file input are combined.
-										<br/>
-										&bull; Optional <b>Genomic Context</b> can be added from the toolbar by providing a GFF file.
-										FASTA and GFF protein IDs must match.
-										<br/>
-										&bull; <code>Function Classification</code> predicts functional categories and nearest neighbors.
-										Results are added to the <b>Embedding Landscape</b> as <em>User Data</em> (<b>○</b>).
-										Additional submissions are appended to existing results.
-										<br/>
-										&bull; Results table/session can be downloaded from the toolbar and restored using <code>Reload Session</code>.
-									</p>
+
+								<!-- Short information about input specification. -->
+								<div id="input-info" data-role="collapse" data-collapsed="true" data-toggle-element="#input-info-toggle">
+									<ul class="pl-4 reduce-2 text-just">
+										<li>
+											<b>Input must be in FASTA format.</b> Line length is unrestricted; ambiguous amino acids are converted to <code>X</code>.
+											The first header field after <code>&gt;</code> is used as the protein ID; remaining header text is treated as description.
+											Text and file input are combined.
+										</li>
+										<li>
+											Optional <b>Genomic Context</b> can be added from the toolbar by providing a GFF file.
+											FASTA and GFF protein IDs must match.
+										</li>
+										<li>
+											<code>Function Prediction</code> uploads data for classification.
+											Results are added to the <b>Embedding Landscape</b> as <em>User Data</em> (<b>○</b>).
+											Additional submissions are appended to existing results.
+										</li>
+										<li>
+											Results table/session data can be downloaded from the toolbar and restored using <code>Reload Session</code>.
+										</li>
+									</ul>
 								</div>
 							</div>
 						</div>
@@ -235,11 +257,10 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 								<code id="sequence-alignment-identity-label"
 									class="reduce-3 mb-1 va-middle"></code>
 								<code class="reduce-3 ml-2 va-middle float-right">
-									<i class="fa-solid fa-square" style="color: #364B9A"></i>&nbsp;Match&nbsp;
-									<i class="fa-solid fa-square" style="color: #A01813"></i>&nbsp;Mismatch&nbsp;
-									<i class="fa-solid fa-square" style="color: #BBBBBB"></i>&nbsp;Insertion&nbsp;
-									<i class="fa-solid fa-square" style="color: #DDDDDD"></i>&nbsp;Deletion&nbsp;
-									<i class="fa-regular fa-square" style="color: #BBBBBB"></i>&nbsp;Unmapped Residue
+									<i class="fa-solid fa-square" style="color: #4477BB"></i>&nbsp;Match&nbsp;
+									<i class="fa-solid fa-square" style="color: #CC4466"></i>&nbsp;Mismatch&nbsp;
+									<i class="fa-solid fa-square" style="color: #BBBBBB"></i>&nbsp;InDel&nbsp;
+									<i class="fa-regular fa-square" style="color: #BBBBBB"></i>&nbsp;Gap
 								</code>
 							</span>
 							<div id="sequence-alignment-chart-container"></div>
@@ -257,27 +278,23 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 			</div>
 		</div>
 
-		<!-- UI for help and about information. -->
-		<div id="about">
+		<!-- Tab/UI for usage information of the web application. -->
+		<div id="usage">
 			<div class="container-fluid">
 				<div class="row">
 					<!-- Sticky navigation. -->
 					<aside class="cell-lg-3 cell-md-4 cell-sm-12">
-						<nav class="about-nav">
+						<nav class="usage-nav">
 							<h3 class="mb-3">Index</h3>
-							<ul id="about-nav-index" class="h-auto">
+							<ul id="usage-nav-index" class="h-auto">
 								<!-- Is filled automatically by the js/main.js:indexAbout() function. -->
 							</ul>
 						</nav>
 					</aside>
 					<!-- About content. -->
 					<main class="cell-lg-9 cell-md-8 cell-sm-12">
-						<article class="about-content">
-							{% include "about/usage.html" %}
-							<hr style="margin-bottom: 4rem;" />
-							{% include "about/contact.html" %}
-							<hr style="margin-bottom: 4rem;" />
-							{% include "about/legal.html" %}
+						<article class="usage-content">
+							{% include "usage.html" %}
 						</article>
 					</main>
 				</div>
