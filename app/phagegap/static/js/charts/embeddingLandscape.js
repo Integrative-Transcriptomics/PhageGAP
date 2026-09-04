@@ -33,7 +33,6 @@ export class EmbeddingLandscape extends Chart {
 		super(element);
 		this.showReferenceIdentical = true;
 		this.noReferenceIdentical = 0;
-		this.minTop1Probability = 0;
 	}
 
 	/**
@@ -427,6 +426,26 @@ export class EmbeddingLandscape extends Chart {
 				});
 			}
 		});
+	}
+
+	/**
+	 * Filters the user-submitted data points in the embedding landscape chart based on a minimum probability threshold.
+	 * 
+	 * @param {number} minProbability The minimum probability threshold (in percentage) for displaying user-submitted data points
+	 * in the embedding landscape chart. 
+	 */
+	filterPredictionProbability(minProbability) {
+		if (!this.echart) return;
+		if (!userdataTable) return;
+
+		const option = this.echart.getOption();
+		if (!option.series[11]) return; // Ensure the "User Data" series exists before proceeding.
+		option.series[11].data.forEach((point) => {
+			const info = userdataTable.entry(point.name);
+			const probability = (info["P(top1)"] * 100);
+			point.symbolSize = probability >= minProbability ? USER_DATA_SIZE : 0;
+		});
+		this.echart.setOption(option);
 	}
 
 	/**

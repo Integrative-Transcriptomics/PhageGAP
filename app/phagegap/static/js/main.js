@@ -152,6 +152,11 @@ export function initApp() {
 	document.getElementById("toolbar-download-session-button").onclick =
 		downloadSession;
 	
+	// Listen to changes in the minimum probability filter and update the embedding landscape chart accordingly.
+	$("#embedding-landscape-probability-spinner")[0].addEventListener("change", (event) => {
+		embeddingLandscape.filterPredictionProbability(event.target.value);
+	});
+	
 	// Promise for the presence of the `phagegap_consent` cookie.
 	util.cookieDisclaimer().then(() => {
 		// Enable the "Function Classification" tab in the navigation bar.
