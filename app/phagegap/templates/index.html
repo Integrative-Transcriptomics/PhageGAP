@@ -147,17 +147,16 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 				<!-- Toolbar. -->
 				<div class="row no-gap">
 					<div class="cell-12 mt-2">
-						<button id="data-input-toggle" class="small"><i class="fa-solid fa-caret-down"></i> Data Input</button>
+						<button id="data-input-toggle" class="small">
+							<i class="fa-solid fa-caret-down"></i> Data Input
+						</button>
 						<button id="toolbar-genomic-context-button" class="small ml-1">
 							<i class="fa-solid fa-dna"></i> Add Genomic Context
 						</button>
-						<!--<button id="toolbar-maximize-structure-button" class="small ml-1">
-							<i class="fa-solid fa-picture-in-picture"></i> Maximize Structure View
-						</button>-->
 						<button id="toolbar-screenshot-button" class="small ml-1">
 							<i class="fa-solid fa-camera"></i> Screenshot
 						</button>
-						<button id="toolbar-download-results-button" class="small ml-1 dropdown-toggle">
+						<button id="toolbar-download-results-button" class="small ml-1">
 							<i class="fa-solid fa-download"></i> Download Results
 						</button>
 						<button id="toolbar-download-session-button" class="small ml-1">
@@ -218,14 +217,16 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 				<hr style="margin: 5px;"/>
 				
 				<div id="app-area">
-					<div class="row gap-1">
-						<div data-role="splitter" data-split="vertical" data-split-sizes="72%, 28%">
+					<div class="row no-gap">
+						<div data-role="splitter" data-split="vertical" data-split-sizes="75%, 25%">
 							
 							<!-- Embedding landscape chart. -->
 							<div class="cell-auto w-min-25 pr-1">
-								<span class="label">Embedding Landscape</span>
+								<span class="label">
+									Embedding Landscape
+								</span>
 								<select id="protein-select" 
-										class="float-right small w-25 mr-2"
+										class="float-right small w-25 mr-2 mt-1"
 										data-role="select" data-clear-button="true"
 										data-filter="true"
 										data-prepend="Selected Protein:"
@@ -233,57 +234,61 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 										data-placeholder="None"
 										data-use-placeholder="true">
 								</select>
-								<div id="embedding-landscape-chart-container" data-role="resizer"></div>
+								<div id="embedding-landscape-chart-container"></div>
 							</div>
 
-							<!-- Prediction summary and nearest neighbor information charts. -->
-							<div class="cell w-min-25 pl-1" minimized>
+							<div class="cell w-min-25 pl-1">
 								<div class="grid">
+
+									<!-- Prediction summary chart. -->
 									<div class="row">
-										<span id="category-probabilities-chart-label" class="label" minimized>Prediction Summary</span>
-										<div id="category-probabilities-chart-container" data-role="resizer">
-										</div>
+										<span id="category-probabilities-chart-label" class="label">
+											Prediction Summary
+										</span>
+										<div id="category-probabilities-chart-container"></div>
 									</div>
 
-									<!-- Structure view chart. -->
+									<!-- Nearest-neighbor information charts. -->
 									<div class="row mt-2">
+										<!-- Overlay for nearest-neighbor content. -->
+										<div id="nearest-neighbor-cloak">
+											<p class="reduce-2 text-center mt-8">
+												Click a User Data point in the embedding landscape to view nearest neighbor information.
+											</p>
+										</div>
+
 										<span class="label">Nearest-Neighbor
-											<code id="nearest-neighbor-id-tag"
-											class="reduce-3 va-middle"></code>
-											<code id="nearest-neighbor-class-tag"
-											class="reduce-3 va-middle"></code>
+											<code id="nearest-neighbor-id-tag" class="reduce-3 va-middle"></code>
+											<code id="nearest-neighbor-class-tag" class="reduce-3 va-middle"></code>
 										</span>
 
+										<!-- Protein structure view. -->
 										<span class="label">Structure
-											<code id="structure-view-info-tag"
-											class="reduce-3 va-middle"></code>
+											<code id="structure-view-info-tag" class="reduce-3 va-middle"></code>
 										</span>
-										<div id="structure-view-container" data-role="resizer">
-										</div>	
-									</div>
+										<div id="structure-view-container"></div>	
 
-									<!-- Sequence alignment chart. -->
-									<div class="row">
-											<span class="label">Sequence Alignment
-												<code id="sequence-alignment-identity-tag"
-												class="reduce-3 va-middle"></code>
-											</span>
-											<div id="sequence-alignment-chart-container"></div>
-									</div>
+										<!-- Sequence alignment chart. -->
+										<span class="label">Sequence Alignment
+											<code id="sequence-alignment-identity-tag" class="reduce-3 va-middle"></code>
+										</span>
+										<div id="sequence-alignment-chart-container"></div>
 
-									<span class="reduce-3 mt-1 centered">
-										<i class="fa-solid fa-square" style="color: #4477BB"></i>&nbsp;Match&nbsp;
-										<i class="fa-solid fa-square" style="color: #CC4466"></i>&nbsp;Mismatch&nbsp;
-										<i class="fa-solid fa-square" style="color: #BBBBBB"></i>&nbsp;InDel&nbsp;
-										<i class="fa-regular fa-square" style="color: #BBBBBB"></i>&nbsp;Gap
-									</span>
+										<!-- Color legend for nearest-neighbor structure and sequence alignment.  -->
+										<span class="reduce-3 mt-1 centered">
+											<i class="fa-solid fa-square" style="color: #4477BB"></i>&nbsp;Match&nbsp;
+											<i class="fa-solid fa-square" style="color: #CC4466"></i>&nbsp;Mismatch&nbsp;
+											<i class="fa-solid fa-square" style="color: #BBBBBB"></i>&nbsp;InDel&nbsp;
+											<i class="fa-regular fa-square" style="color: #BBBBBB"></i>&nbsp;Gap
+										</span>
+									</div>
 								</div>
 							</div>
 						</div>
 					</div>
 
 					<!-- Genomic context chart. -->
-					<div class="row gap-1">
+					<div class="row no-gap">
 						<div class="cell-12">
 							<span class="label">Genomic Context</span>
 							<div id="genomic-context-chart-container"></div>

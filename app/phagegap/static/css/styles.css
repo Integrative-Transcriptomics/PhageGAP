@@ -228,10 +228,20 @@ hr {
 	cursor: default;
 }
 
+#nearest-neighbor-cloak {
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	background: var(--bg-color-2);
+	color: var(--text-light2-color);
+	border-radius: 3px;
+	z-index: 2;
+}
+
 #structure-view-container {
-	height: 40vh;
+	height: 34vh;
 	width: auto;
-	background: #f7f9fccc;
+	background: var(--bg-color-2);
 	border: 1px solid var(--bg-color-3);
 	border-radius: 3px;
 }
@@ -248,14 +258,14 @@ hr {
 #sequence-alignment-chart-container {
 	height: 10vh;
 	width: auto;
-	background: #f7f9fccc;
+	background: var(--bg-color-2);
 	border-radius: 3px;
 }
 
 #genomic-context-chart-container {
-	height: 10vh;
+	height: 12vh;
 	width: auto;
-	background: #f7f9fccc;
+	background: var(--bg-color-2);
 	border-radius: 3px;
 }
 

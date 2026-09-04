@@ -10,6 +10,11 @@ import {
 import { displayNotification } from "../utility.js";
 
 /**
+ * The symbol size for user-submitted data points in the embedding landscape chart.
+ */
+const USER_DATA_SIZE = 10;
+
+/**
  * Class to build and manage the embedding landscape chart using ECharts.
  * 
  * Extends the base {@link Chart} class to provide specific functionality for the embedding landscape chart,
@@ -177,7 +182,7 @@ export class EmbeddingLandscape extends Chart {
 		option.series.push({
 			type: "scatter",
 			name: "User Data",
-			symbolSize: 8,
+			symbolSize: USER_DATA_SIZE,
 			itemStyle: {
 				borderColor: "black",
 				borderWidth: 0.8,
@@ -305,6 +310,12 @@ export class EmbeddingLandscape extends Chart {
 		this.highlightNearestNeighbor(0);
 	}
 
+	/**
+	 * Highlights the nearest neighbor at the specified index in the embedding landscape chart by showing its label and
+	 * increasing its line width.
+	 * 
+	 * @param {number} nnIndex The index of the nearest neighbor to highlight in the mark line data. 
+	 */
 	highlightNearestNeighbor(nnIndex) {
 		// Access mark line data.
 		var option = this.echart
@@ -323,6 +334,10 @@ export class EmbeddingLandscape extends Chart {
 		this.echart.setOption(option);
 	}
 
+	/**
+	 * Resets the highlight on the embedding landscape chart by restoring the opacity of all "User Data" points
+	 * and removing any mark lines connecting the selected protein to its nearest neighbors.
+	 */
 	resetHighlight() {
 		// Update the "User Data" series option.
 		const option = this.echart.getOption();
@@ -390,7 +405,7 @@ export class EmbeddingLandscape extends Chart {
 				this.echart.setOption({
 					series: this.echart.getOption().series.map((series) => ({
 						...series,
-						symbolSize: series.name == "User Data" ? 8 : newSymbolSize,
+						symbolSize: series.name == "User Data" ? USER_DATA_SIZE : newSymbolSize,
 					})),
 				});
 			}

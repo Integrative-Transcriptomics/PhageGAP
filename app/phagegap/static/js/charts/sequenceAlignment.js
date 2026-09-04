@@ -112,6 +112,7 @@ export class SequenceAlignment extends Chart {
 	clear() {
 		if (!this.echart) return;
 		this.echart.clear();
+		this.setIdentity();
 	}
 
 	setIdentity(identity) {

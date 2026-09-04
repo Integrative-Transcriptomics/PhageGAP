@@ -88,20 +88,17 @@ export function initApp() {
 	categoryProbabilities = new CategoryProbabilities(
 		document.getElementById("category-probabilities-chart-container"),
 	);
-	categoryProbabilities.state.setValue("Submit data or reload session to view function predictions.")
+	categoryProbabilities.state.setValue("Run Function Prediction or Reload Session to start.")
 
 	sequenceAlignment = new SequenceAlignment(
 		document.getElementById("sequence-alignment-chart-container"),
-	);
-	sequenceAlignment.state.setValue(
-		"Submit data or reload session to view sequence alignment and predicted structure of the nearest neighbor protein.",
 	);
 
 	genomicContext = new GenomicContext(
 		document.getElementById("genomic-context-chart-container"),
 	);
 	genomicContext.state.setValue(
-		"Submit a GFF file via the toolbar to view genomic context.",
+		"Submit a GFF file via Add Genomic Context in the toolbar.",
 	);
 
 	structureView = new StructureView(
@@ -235,16 +232,14 @@ function handleSelectionChange() {
 		genomicContext.zoom();
 		structureView.clear();
 		sequenceAlignment.clear();
-
-		categoryProbabilities.state.setValue(
-			"Click on a User Data point to view function predictions.",
-		);
-		sequenceAlignment.state.setValue(
-			"Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.",
-		);
-
-		// Remove sequence identity information from the sequence alignment chart.
-		sequenceAlignment.setIdentity();
+		document.getElementById("nearest-neighbor-cloak").style.display = "block";
+		document.getElementById("nearest-neighbor-cloak").innerHTML = `
+		<p class="reduce-2 text-center mt-8">
+			Click a User Data point in the embedding landscape to view nearest neighbor information.
+		</p>
+		`;
+		document.getElementById("nearest-neighbor-id-tag").innerHTML = "";
+		document.getElementById("nearest-neighbor-class-tag").innerHTML = "";
 
 		// Reset information about the selected protein in the selection info container.
 		document.getElementById("selection-clear-button").style.display = "none";
@@ -288,14 +283,15 @@ function handleNearestNeighborChange() {
 			},
 		})
 		.then((response) => {
-			// Update the nearest neighbor tags.
-			document.getElementById("nearest-neighbor-id-tag").innerHTML =
-				nnProteinId;
+			// Fade out the nearest neighbor information overlay to reveal the structure view and sequence alignment chart.
+			document.getElementById("nearest-neighbor-cloak").style.display = "none";
 
+			// Update the nearest neighbor tags.
+			document.getElementById("nearest-neighbor-id-tag").innerHTML = `${nnProteinId}`;
 			var nnMetadata = metadataTable.entry(nnProteinId);
+			console.log(nnMetadata);
 			var bgClr = CATEGORY_COLORS[nnMetadata.category] || NA_COLOR;
-			document.getElementById("nearest-neighbor-class-tag").innerHTML =
-				nnMetadata.subcategory;
+			document.getElementById("nearest-neighbor-class-tag").innerHTML = `${nnMetadata.subcategory}`;
 			document.getElementById("nearest-neighbor-class-tag").style.backgroundColor = bgClr;
 
 			// Fill the sequence alignment chart with returned alignment data.
@@ -305,9 +301,6 @@ function handleNearestNeighborChange() {
 				nnProteinId,
 				currentSelection.protein_ID,
 			);
-
-			// Clear the loading state of the sequence alignment chart.
-			sequenceAlignment.state.setValue(null);
 
 			// Provide the sequence identity information in the sequence alignment chart.
 			sequenceAlignment.setIdentity(response.data.sequence_identity);
@@ -322,9 +315,13 @@ function handleNearestNeighborChange() {
 		})
 		.catch((error) => {
 			// Display an error notification as state of the sequence alignment chart.
-			sequenceAlignment.state.setValue(
-				"Failed to retrieve sequence alignment and structure data. Please try another protein.",
-			);
+			document.getElementById("nearest-neighbor-cloak").style.display = "block";
+			document.getElementById("nearest-neighbor-cloak").innerHTML = `
+			<i class="fa-solid fa-triangle-exclamation" style="color: #cb0e40;"></i>
+			<p class="reduce-2 text-center mt-8">
+				Failed to retrieve structure and sequence data of the selected nearest-neighbor. Please try another.
+			</p>
+			`;
 
 			console.error(error);
 			let message = error.message;
@@ -337,84 +334,6 @@ function handleNearestNeighborChange() {
 				"warning",
 			);
 		});
-}
-
-/**
- * Toggles the maximization state of the structure view in the user interface, adjusting the layout of the embedding landscape
- * chart and structure display accordingly.
- * 
- * - When maximized, the structure view occupies more space, and the category probabilities chart is hidden.
- * - When minimized, the structure view is reduced in size, and the category probabilities chart is displayed.
- */
-function toggleMaximizeStructureView() {
-	let structureViewCell = document.getElementById("structure-view-cell");
-	if (structureViewCell.hasAttribute("minimized")) {
-		// Maximize the structure view element.
-
-		// Remove indicator attribute.
-		structureViewCell.removeAttribute("minimized");
-
-		// Switch button label.
-		document.getElementById("toolbar-maximize-structure-button").innerHTML =
-			`<i class="fa-solid fa-picture-in-picture"></i> Minimize Structure View`;
-
-		// Adjust the layout of the embedding landscape chart and structure display cells to accommodate the maximized structure view.
-		document
-			.getElementById("embedding-landscape-chart-cell")
-			.classList.remove("cell-9");
-		document
-			.getElementById("embedding-landscape-chart-cell")
-			.classList.add("cell-6");
-		document.getElementById("structure-view-cell").classList.remove("cell-3");
-		document.getElementById("structure-view-cell").classList.add("cell-6");
-
-		// Adjust the container widths of the embedding landscape chart and structure display to fill the available space.
-		document.getElementById("embedding-landscape-chart-container").style.width =
-			"48vw";
-		document.getElementById("structure-view-container").style.width = "50vw";
-		document.getElementById("structure-view-container").style.height = "60vh";
-
-		// Hide the category probabilities chart when the structure view is maximized.
-		document.getElementById(
-			"category-probabilities-chart-label",
-		).style.display = "none";
-		document.getElementById(
-			"category-probabilities-chart-container",
-		).style.display = "none";
-	} else {
-		// Minimize the structure view element.
-
-		// Add indicator attribute.
-		structureViewCell.setAttribute("minimized", "");
-
-		// Switch button label.
-		document.getElementById("toolbar-maximize-structure-button").innerHTML =
-			`<i class="fa-solid fa-picture-in-picture"></i> Maximize Structure View`;
-
-		// Adjust the layout of the embedding landscape chart and structure display cells to accommodate the minimized structure view.
-		document
-			.getElementById("embedding-landscape-chart-cell")
-			.classList.remove("cell-6");
-		document
-			.getElementById("embedding-landscape-chart-cell")
-			.classList.add("cell-9");
-		document.getElementById("structure-view-cell").classList.remove("cell-6");
-		document.getElementById("structure-view-cell").classList.add("cell-3");
-
-		// Adjust the container widths of the embedding landscape chart and structure display to fill the available space.
-		document.getElementById("embedding-landscape-chart-container").style.width =
-			"73vw";
-		document.getElementById("structure-view-container").style.width = "27vw";
-		document.getElementById("structure-view-container").style.height = "40vh";
-
-		// Show the category probabilities chart when the structure view is minimized.
-		document.getElementById(
-			"category-probabilities-chart-label",
-		).style.display = "block";
-		document.getElementById(
-			"category-probabilities-chart-container",
-		).style.display = "block";
-	}
 }
 
 /**
@@ -609,9 +528,6 @@ function processUserData(data) {
 		categoryProbabilities.state.setValue(
 			"Click on a User Data point to view function predictions.",
 		);
-		sequenceAlignment.state.setValue(
-			"Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.",
-		);
 	});
 }
 
@@ -719,9 +635,6 @@ async function restoreSession() {
 			} else {
 				categoryProbabilities.state.setValue(
 					"Click on a User Data point to view function predictions.",
-				);
-				sequenceAlignment.state.setValue(
-					"Click on a User Data point to view sequence alignment and predicted structure of the nearest neighbor protein.",
 				);
 			}
 

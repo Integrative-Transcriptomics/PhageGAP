@@ -26,7 +26,6 @@ export class StructureView {
 	clear() {
 		this.glviewer.clear();
 		this.glviewer.render();
-		document.getElementById("structure-view-info-tag").innerHTML = "";
 	}
 
 	/**
