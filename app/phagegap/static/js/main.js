@@ -216,7 +216,9 @@ function handleSelectionChange() {
 		if (genomicContext && selectedProteinEntry) genomicContext.zoom();
 
 		// Set the nearest neighbor information to the first nearest neighbor of the clicked protein.
-		nnId.setValue(nearestNeighbors[selectedProteinEntry.protein_ID][0].protein_ID);
+		nnId.setValue(
+			nearestNeighbors[selectedProteinEntry.protein_ID][0].protein_ID,
+		);
 
 		// Add information about the selected protein to the selection info container.
 		document.getElementById("selection-clear-button").style.display =
@@ -238,6 +240,9 @@ function handleSelectionChange() {
 		`;
 		document.getElementById("nearest-neighbor-id-tag").innerHTML = "";
 		document.getElementById("nearest-neighbor-class-tag").innerHTML = "";
+
+		// Display the prediction summary.
+		categoryProbabilities.showSummary();
 
 		// Reset information about the selected protein in the selection info container.
 		document.getElementById("selection-clear-button").style.display = "none";
@@ -519,7 +524,7 @@ function processUserData(data) {
 		// Update the embedding landscape chart to reflect the newly loaded user-submitted data.
 		embeddingLandscape.update();
 
-		// Display a prediction summary.
+		// Display the prediction summary.
 		categoryProbabilities.showSummary();
 
 		// Update the genomic context chart to reflect the newly loaded user-submitted data, if applicable.

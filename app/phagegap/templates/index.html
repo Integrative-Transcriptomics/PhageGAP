@@ -221,19 +221,35 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 						<div data-role="splitter" data-split="vertical" data-split-sizes="75%, 25%">
 							
 							<!-- Embedding landscape chart. -->
-							<div class="cell-auto w-min-25 pr-1">
+							<div class="cell-auto w-min-50 pr-1">
 								<span class="label">
 									Embedding Landscape
 								</span>
-								<select id="protein-select" 
-										class="float-right small w-25 mr-2 mt-1"
+								<div class="float-right mr-2 mt-1" style="display: inline-flex; align-items: center;">
+									<span class="reduce-2 mr-2" style="white-space: nowrap;">Selected Protein:</span>
+									<select id="protein-select" 
+										class="small"
+										data-cls-select="select-small"
 										data-role="select" data-clear-button="true"
 										data-filter="true"
-										data-prepend="Selected Protein:"
 										data-filter-placeholder="Search for protein ID..."
 										data-placeholder="None"
 										data-use-placeholder="true">
-								</select>
+									</select>
+								</div>
+								<div class="float-right mr-2 mt-1" style="display: inline-flex; align-items: center;">
+									<span class="reduce-2 mr-2" style="white-space: nowrap;">Min. Class Prediction Probability:</span>
+									<input type="text"
+										id="embedding-landscape-probability-spinner"
+										class="small"
+										data-cls-spinner="spinner-small"
+										data-role="spinner"
+										data-min-value="0"
+										data-max-value="100"
+										data-default-value="0"
+										data-step="1">
+								</div>
+								
 								<div id="embedding-landscape-chart-container"></div>
 							</div>
 

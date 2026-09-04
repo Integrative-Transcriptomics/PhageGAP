@@ -83,7 +83,7 @@ export class CategoryProbabilities extends Chart {
 		};
 
 		// Set the chart option to render the bar chart with the prepared data and configuration.
-		this.echart.setOption(option);
+		this.echart.setOption(option, {notMerge: true});
 		this.setActive();
 	}
 
@@ -175,7 +175,7 @@ export class CategoryProbabilities extends Chart {
 			],
 		};
 
-		this.echart.setOption(option);
+		this.echart.setOption(option, { notMerge: true });
 
 		this.setActive();
 	}

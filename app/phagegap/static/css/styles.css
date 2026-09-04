@@ -131,6 +131,15 @@ hr {
 	border-radius: 2px;
 }
 
+.select-small {
+	width: 200px !important;
+
+}
+
+.spinner-small {
+	width: 100px !important;
+}
+
 .phagegap-logo-text {
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 1rem;
