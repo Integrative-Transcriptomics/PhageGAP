@@ -289,7 +289,6 @@ function handleNearestNeighborChange() {
 			// Update the nearest neighbor tags.
 			document.getElementById("nearest-neighbor-id-tag").innerHTML = `${nnProteinId}`;
 			var nnMetadata = metadataTable.entry(nnProteinId);
-			console.log(nnMetadata);
 			var bgClr = CATEGORY_COLORS[nnMetadata.category] || NA_COLOR;
 			document.getElementById("nearest-neighbor-class-tag").innerHTML = `${nnMetadata.subcategory}`;
 			document.getElementById("nearest-neighbor-class-tag").style.backgroundColor = bgClr;
