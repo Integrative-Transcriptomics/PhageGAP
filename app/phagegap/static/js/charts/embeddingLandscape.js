@@ -31,6 +31,9 @@ export class EmbeddingLandscape extends Chart {
 	 */
 	constructor(element) {
 		super(element);
+		this.showReferenceIdentical = true;
+		this.noReferenceIdentical = 0;
+		this.minTop1Probability = 0;
 	}
 
 	/**
@@ -132,10 +135,18 @@ export class EmbeddingLandscape extends Chart {
 				},
 			],
 			toolbox: {
-				left: "left",
+				left: "1%",
 				top: "top",
 				feature: {
-					dataZoom: { },
+					dataZoom: {},
+					myToggleReferenceIdentical: {
+						show: true,
+						title: `Hide ${this.noReferenceIdentical} Reference-identical`,
+						icon: "path://M512 0C229.230933 0 0 229.230933 0 512s229.230933 512 512 512 512-229.230933 512-512S794.769067 0 512 0z m0 960C264.601067 960 64 759.398933 64 512S264.601067 64 512 64s448 200.601067 448 448-200.601067 448-448 448z m0-832c-211.764267 0-384 172.235733-384 384s172.235733 384 384 384c211.764267 0 384-172.235733 384-384s-172.235733-384-384-384z m0 640c-141.3856 0-256-114.6144-256-256s114.6144-256 256-256c141.3856 0 256 114.6144 256 256s-114.6144 256-256 256z",
+						onclick: () => {
+							this.#toggleShowReferenceIdentical();
+						},
+					},
 				},
 				padding: 5,
 				...backgroundStyle,
@@ -171,9 +182,14 @@ export class EmbeddingLandscape extends Chart {
 		// Add the new `user_data` scatter series to the current options.
 		let d = [];
 		userdataTable.entries().forEach((entry) => {
+			let refId = nearestNeighbors[entry.protein_ID][0].pca_distance < 0.001;
+			if (refId) {
+				this.noReferenceIdentical++;
+			}
 			d.push({
 				name: entry.protein_ID,
 				value: [entry.tsne_1, entry.tsne_2],
+				referenceIdentical: refId,
 				itemStyle: {
 					color: CATEGORY_COLORS[SUBCATEGORY_MAP[entry.top1]] || NA_COLOR,
 				},
@@ -196,6 +212,7 @@ export class EmbeddingLandscape extends Chart {
 				zlevel: 12,
 			},
 		});
+		option.toolbox[0].feature.myToggleReferenceIdentical.title = `Hide ${this.noReferenceIdentical} Reference-identical`;
 
 		// Update the chart with the new options.
 		this.echart.setOption(option);
@@ -410,6 +427,26 @@ export class EmbeddingLandscape extends Chart {
 				});
 			}
 		});
+	}
+
+	/**
+	 * Toggles the visibility of user-submitted data points that are identical to reference data in the embedding landscape chart.
+	 * 
+	 * When toggled, the method updates the symbol size of points that are identical to reference data based on the current state
+	 * of `showReferenceIdentical`. If `showReferenceIdentical` is true, identical points will be displayed with their original
+	 * symbol size; if false, they will be hidden (symbol size set to 0).
+	 */
+	#toggleShowReferenceIdentical() {
+		this.showReferenceIdentical = !this.showReferenceIdentical;
+		const option = this.echart.getOption();
+		option.series[11].data.forEach((point) => {
+			if (point.referenceIdentical) {
+				point.symbolSize = this.showReferenceIdentical ? USER_DATA_SIZE : 0;
+			}
+		});
+		option.toolbox[0].feature.myToggleReferenceIdentical.title =
+			`${this.showReferenceIdentical ? "Hide" : "Show"} ${this.noReferenceIdentical} Reference-identical`;
+		this.echart.setOption(option);
 	}
 
 	/**

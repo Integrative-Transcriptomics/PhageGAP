@@ -206,9 +206,7 @@ function handleSelectionChange() {
 
 		// Show the category probabilities for the clicked protein in the category probabilities chart.
 		if (categoryProbabilities && selectedProteinEntry)
-			categoryProbabilities.show(selectedProteinEntry);
-		// Clear the loading state of the category probabilities chart.
-		categoryProbabilities.state.setValue(null);
+			categoryProbabilities.showDetail(selectedProteinEntry);
 
 		// Highlight the nearest neighbor of the clicked "User Data" point in the embedding landscape chart.
 		if (embeddingLandscape && selectedProteinEntry)
@@ -521,12 +519,11 @@ function processUserData(data) {
 		// Update the embedding landscape chart to reflect the newly loaded user-submitted data.
 		embeddingLandscape.update();
 
+		// Display a prediction summary.
+		categoryProbabilities.showSummary();
+
 		// Update the genomic context chart to reflect the newly loaded user-submitted data, if applicable.
 		genomicContext.fill();
-
-		categoryProbabilities.state.setValue(
-			"Click on a User Data point to view function predictions.",
-		);
 	});
 }
 
@@ -631,10 +628,6 @@ async function restoreSession() {
 				userdataTable.entry(sessionData.selectedUserData) !== null
 			) {
 				Metro.getPlugin("#protein-select", "select").val(sessionData.selectedUserData);
-			} else {
-				categoryProbabilities.state.setValue(
-					"Click on a User Data point to view function predictions.",
-				);
 			}
 
 			// Check if the value of nearest neighbor in the session data is valid and exists in the user-submitted data table.

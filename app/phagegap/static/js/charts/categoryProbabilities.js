@@ -1,5 +1,6 @@
 import * as util from "../utility.js";
 import { Chart } from "./chart.js";
+import { userdataTable, nearestNeighbors } from "../main.js";
 import { CATEGORY_COLORS, SUBCATEGORY_MAP, NA_COLOR } from "../constants.js";
 
 /**
@@ -24,7 +25,7 @@ export class CategoryProbabilities extends Chart {
 	 *
 	 * @param {object} clicked An entry from the `userdataTable` corresponding to the clicked data point in the embedding landscape chart.
 	 */
-	show(clicked) {
+	showDetail(clicked) {
 		if (!this.echart) return;
 
 		// Extract the top 3 categories and their probabilities from the entry.
@@ -86,6 +87,102 @@ export class CategoryProbabilities extends Chart {
 		this.setActive();
 	}
 
+	/**
+	 * Displays a summary of function prediction probabilities of all proteins
+	 * in a stacked bar chart.
+	 */
+	showSummary() {
+		if (!this.echart) return;
+
+		const probabilityCountsNovel = {};
+		const probabilityCountsKnown = {};
+
+		for (let i = 1; i <= 100; i++) {
+			probabilityCountsNovel[i.toString()] = 0;
+			probabilityCountsKnown[i.toString()] = 0;
+		}
+
+		for (const entry of userdataTable.entries()) {
+			const p = (entry["P(top1)"] * 100).toFixed(0);
+
+			if (nearestNeighbors[entry.protein_ID][0].pca_distance < 0.001) {
+				probabilityCountsKnown[p]++;
+			} else {
+				probabilityCountsNovel[p]++;
+			}
+		}
+
+		// Style definitions for background elements like legend, toolbox, and tooltip to enhance visibility.
+		const backgroundStyle = {
+			backgroundColor: "rgba(247, 249, 252, 0.9)", // Light blue background for better visibility.
+			borderRadius: 5,
+		};
+
+		const option = {
+			grid: {
+				containLabel: true,
+				left: "5%",
+				top: "10%",
+				right: "2%",
+				bottom: "10%",
+			},
+			xAxis: {
+				type: "category",
+				data: Object.keys(probabilityCountsNovel),
+				interval: 10,
+				name: "Probability (%)",
+				nameGap: 20,
+				nameLocation: "center",
+			},
+			yAxis: {
+				type: "value",
+				name: "Count",
+				nameGap: 25,
+				nameLocation: "center",
+			},
+			legend: {
+				orient: "horizontal",
+				top: 0,
+				left: "center",
+				textStyle: {
+					fontSize: 10,
+				},
+				itemWidth: 5,
+				itemHeight: 15,
+				selectedMode: false, // Disable toggling of series visibility by clicking on legend items.
+				show: true,
+				...backgroundStyle,
+			},
+			series: [
+				{
+					type: "bar",
+					name: "Non-identical",
+					data: Object.values(probabilityCountsNovel),
+					stack: "total",
+					itemStyle: {
+						color: "#062465",
+					},
+				},
+				{
+					type: "bar",
+					name: "Reference-identical",
+					data: Object.values(probabilityCountsKnown),
+					stack: "total",
+					itemStyle: {
+						color: "#888888",
+					},
+				},
+			],
+		};
+
+		this.echart.setOption(option);
+
+		this.setActive();
+	}
+
+	/**
+	 * Clears the category probabilities chart, removing any displayed data and resetting the chart state.
+	 */
 	clear() {
 		if (!this.echart) return;
 		this.echart.clear();
