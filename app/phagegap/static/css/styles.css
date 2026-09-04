@@ -36,6 +36,10 @@ body {
 	color: var(--text-color);
 }
 
+section {
+	padding: 1rem;
+}
+
 a {
 	color: var(--icon-color);
 }

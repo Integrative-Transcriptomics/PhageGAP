@@ -76,10 +76,10 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 	<body>
 		<ul data-role="materialtabs">
 			<li class="active">
-				<a href="#home">ABOUT</a>
+				<a href="#home">HOME</a>
 			</li>
 			<li id="classification-tab" disabled>
-				<a href="#classification"><span class="phagegap-logo-text">PhageGAP</span></a>
+				<a href="#classification">FUNCTION PREDICTION</a>
 			</li>
 			<li>
 				<a href="#usage">USAGE</a>
@@ -124,7 +124,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 						<div id="home-description" class="hero p-20">
 
 							<p class="text-just text-leader2 text-medium w-50 flex-right">
-								PhageGAP predicts curated functional classes for phage proteins using protein language model embeddings.
+								<span class="phagegap-logo-text">PhageGAP</span> predicts curated functional classes for phage proteins using protein language model embeddings.
 							</p>
 
 							<p class="text-just w-50 flex-right">
@@ -137,7 +137,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 					</div>
 				</div>
 			</div>
-			{% include "footer.html" %}
+			<hr/>
+			<div class="reduce-2">
+				{% include "about/legal.html" %}
+				{% include "about/contact.html" %}
+			</div>
 		</div>
 
 		<!-- Tab/UI for the functional part of the web application. -->
