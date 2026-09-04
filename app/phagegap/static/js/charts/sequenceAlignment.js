@@ -115,7 +115,8 @@ export class SequenceAlignment extends Chart {
 	}
 
 	setIdentity(identity) {
-		var label = document.getElementById("sequence-alignment-identity-label");
+		var label = document.getElementById("sequence-alignment-identity-tag");
+		
 		// Set the sequence identity information for the sequence alignment chart.
 		if (identity === null || identity === undefined) {
 			label.innerHTML = "";

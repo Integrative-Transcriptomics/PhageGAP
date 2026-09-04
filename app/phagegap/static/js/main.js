@@ -1,6 +1,7 @@
 import * as util from "./utility.js";
 import { Observable } from "./observable.js";
 import { ArqueroTable } from "./table.js";
+import { CATEGORY_COLORS, NA_COLOR } from "./constants.js";
 import { EmbeddingLandscape } from "./charts/embeddingLandscape.js";
 import { CategoryProbabilities } from "./charts/categoryProbabilities.js";
 import { StructureView } from "./charts/structureView.js";
@@ -287,6 +288,17 @@ function handleNearestNeighborChange() {
 			},
 		})
 		.then((response) => {
+			// Update the nearest neighbor tags.
+			document.getElementById("nearest-neighbor-id-tag").innerHTML =
+				nnProteinId;
+
+			var nnMetadata = metadataTable.entry(nnProteinId);
+			var bgClr = CATEGORY_COLORS[nnMetadata.category] || NA_COLOR;
+			document.getElementById("nearest-neighbor-class-tag").innerHTML =
+				nnMetadata.subcategory;
+			document.getElementById("nearest-neighbor-class-tag").style.backgroundColor = bgClr;
+
+			// Fill the sequence alignment chart with returned alignment data.
 			sequenceAlignment.fill(
 				response.data.sequence_alignment[0], // Sequence of the nearest neighbor protein.
 				response.data.sequence_alignment[1], // Sequence of the selected protein.
@@ -300,13 +312,12 @@ function handleNearestNeighborChange() {
 			// Provide the sequence identity information in the sequence alignment chart.
 			sequenceAlignment.setIdentity(response.data.sequence_identity);
 
+			// Set structure and information label of the structure view.
 			structureView.clear(); // Clear the structure view before adding new content.
 			structureView.fill(response.data.structure_data, "cif"); // Add the protein structure to the structure view.
 			structureView.setInfo(
-				nnProteinId,
 				response.data.structure_plddt_mean,
 				response.data.structure_ptm,
-				currentSelection.top1,
 			);
 		})
 		.catch((error) => {

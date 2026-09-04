@@ -218,10 +218,11 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 				<hr style="margin: 5px;"/>
 				
 				<div id="app-area">
-					<!-- Embedding landscape chart. -->
 					<div class="row gap-1">
 						<div data-role="splitter" data-split="vertical" data-split-sizes="72%, 28%">
-							<div id="embedding-landscape-chart-cell" class="cell-auto w-min-25 pr-1">
+							
+							<!-- Embedding landscape chart. -->
+							<div class="cell-auto w-min-25 pr-1">
 								<span class="label">Embedding Landscape</span>
 								<select id="protein-select" 
 										class="float-right small w-25 mr-2"
@@ -234,33 +235,48 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 								</select>
 								<div id="embedding-landscape-chart-container" data-role="resizer"></div>
 							</div>
-							<div id="structure-view-cell" class="cell w-min-25 pl-1" minimized>
+
+							<!-- Prediction summary and nearest neighbor information charts. -->
+							<div class="cell w-min-25 pl-1" minimized>
 								<div class="grid">
-									<span id="category-probabilities-chart-label" class="label" minimized>Prediction Summary</span>
-									<div class="row no-gap">
+									<div class="row">
+										<span id="category-probabilities-chart-label" class="label" minimized>Prediction Summary</span>
 										<div id="category-probabilities-chart-container" data-role="resizer">
 										</div>
 									</div>
-									<span id="structure-view-label" class="label">Nearest-Neighbor Structure</span>
-									<div class="row no-gap">
-										<p id="structure-view-info" class="p-2"></p>
+
+									<!-- Structure view chart. -->
+									<div class="row mt-2">
+										<span class="label">Nearest-Neighbor
+											<code id="nearest-neighbor-id-tag"
+											class="reduce-3 va-middle"></code>
+											<code id="nearest-neighbor-class-tag"
+											class="reduce-3 va-middle"></code>
+										</span>
+
+										<span class="label">Structure
+											<code id="structure-view-info-tag"
+											class="reduce-3 va-middle"></code>
+										</span>
 										<div id="structure-view-container" data-role="resizer">
 										</div>	
 									</div>
+
 									<!-- Sequence alignment chart. -->
-									<div class="row gap-1">
-											<span class="label">Nearest-Neighbor Sequence Alignment
-												<code id="sequence-alignment-identity-label"
-													class="reduce-3 mb-1 va-middle"></code>
-												<code class="reduce-3 mr-2 va-middle float-right">
-													<i class="fa-solid fa-square" style="color: #4477BB"></i>&nbsp;Match&nbsp;
-													<i class="fa-solid fa-square" style="color: #CC4466"></i>&nbsp;Mismatch&nbsp;
-													<i class="fa-solid fa-square" style="color: #BBBBBB"></i>&nbsp;InDel&nbsp;
-													<i class="fa-regular fa-square" style="color: #BBBBBB"></i>&nbsp;Gap
-												</code>
+									<div class="row">
+											<span class="label">Sequence Alignment
+												<code id="sequence-alignment-identity-tag"
+												class="reduce-3 va-middle"></code>
 											</span>
 											<div id="sequence-alignment-chart-container"></div>
 									</div>
+
+									<span class="reduce-3 mt-1 centered">
+										<i class="fa-solid fa-square" style="color: #4477BB"></i>&nbsp;Match&nbsp;
+										<i class="fa-solid fa-square" style="color: #CC4466"></i>&nbsp;Mismatch&nbsp;
+										<i class="fa-solid fa-square" style="color: #BBBBBB"></i>&nbsp;InDel&nbsp;
+										<i class="fa-regular fa-square" style="color: #BBBBBB"></i>&nbsp;Gap
+									</span>
 								</div>
 							</div>
 						</div>

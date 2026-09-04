@@ -26,7 +26,7 @@ export class StructureView {
 	clear() {
 		this.glviewer.clear();
 		this.glviewer.render();
-		document.getElementById("structure-view-info").innerHTML = "";
+		document.getElementById("structure-view-info-tag").innerHTML = "";
 	}
 
 	/**
@@ -53,15 +53,11 @@ export class StructureView {
 		this.glviewer.render();
 	}
 
-	setInfo(proteinId, plddt_mean = null, ptm = null, compareCategory = null) {
-		var c = `<code>${proteinId}</code>`;
-		if (compareCategory !== null) {
-			var proteinMetadata = metadataTable.entry(proteinId);
-			var bgClr = CATEGORY_COLORS[proteinMetadata.category] || NA_COLOR;
-			c += `<code class="reduce-3 ml-1 va-middle" style="background: ${bgClr}">${proteinMetadata.subcategory}</code>`;
-		};
-		if (plddt_mean !== null) c += `<br/>Mean pLDDT: ${plddt_mean.toFixed(2)}`;
-		if (ptm !== null) c += `<br/>Predicted TM-score: ${ptm.toFixed(2)}`;
-		document.getElementById("structure-view-info").innerHTML = c;
+	setInfo(plddt_mean = null, ptm = null) {
+		var content = "";
+		if (plddt_mean !== null) content += `Mean pLDDT: ${plddt_mean.toFixed(2)}`;
+		if (ptm !== null) content += ` Predicted TM-score: ${ptm.toFixed(2)}`;
+		if (content !== "") content = `<span>${content}</span>`;		
+		document.getElementById("structure-view-info-tag").innerHTML = content;
 	}
 }
