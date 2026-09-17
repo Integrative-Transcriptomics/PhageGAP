@@ -28,7 +28,7 @@ logger.debug("Loading API token from static resources.")
 api_token = None
 try:
 	# TODO: We might want to change how we load the API token in the future, e.g., by using environment variables or a configuration file.
-	api_token_path = Path(app.static_folder).joinpath("resources/secrets/token")
+	api_token_path = Path(app.static_folder).joinpath("secrets/phagegap-api-token")
 	api_token = api_token_path.read_text(encoding="utf-8").strip()
 	if len(api_token) < 32:
 		logger.warning("API token should contain at least 32 characters for security reasons.")
@@ -51,7 +51,7 @@ app.config["SESSION_COOKIE_NAME"] = "phagegap_session"
 # Load secret key for session signing.
 api_key = None
 try:
-	api_key_path = Path(app.static_folder).joinpath("resources/secrets/key")
+	api_key_path = Path(app.static_folder).joinpath("secrets/phagegap-api-key")
 	api_key = api_key_path.read_text(encoding="utf-8").strip()
 	if len(api_key) < 32:
 		logger.warning("Secret key should contain at least 32 characters for security reasons.")
@@ -62,7 +62,7 @@ app.config["SECRET_KEY"] = api_key if api_key is not None else secrets.token_hex
 
 # Load metadata from static resources into a dictionary and validate its contents.
 logger.debug("Loading metadata from static resources.")
-metadata_path = Path(app.static_folder).joinpath("resources/data/metadata.tsv.gz")
+metadata_path = Path(app.static_folder).joinpath("data/phagegap-metadata.tsv.gz")
 metadata_df = pd.read_csv(metadata_path, sep="\t", compression="gzip")
 METADATA_COLUMNS = ["protein_ID", "locus_tag", "organism", "phage_ID", "product", "subcategory", "category", "tsne_1", "tsne_2"]
 if not all(col in metadata_df.columns for col in METADATA_COLUMNS):
@@ -71,7 +71,7 @@ app.extensions["metadata"] = metadata_df
 
 # Load structure information from static resources into a DataFrame and validate its contents.
 logger.debug("Loading structure information from static resources.")
-structure_info_path = Path(app.static_folder).joinpath("resources/data/structures.tsv.gz")
+structure_info_path = Path(app.static_folder).joinpath("data/phagegap-structures.tsv.gz")
 if structure_info_path is None:
 	logger.warning("Structure information path is not specified; the application will not provide structure information.")
 	structure_info_df = None
@@ -86,8 +86,3 @@ app.extensions["structure_info"] = structure_info_df
 # Load API routes.
 logger.debug("Loading API routes.")
 from phagegap import api
-
-# Initialize SocketIO.
-# TODO: This has to be adjustes to allow communication with the PhageGAP classifier.
-#from flask_socketio import SocketIO
-#socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)

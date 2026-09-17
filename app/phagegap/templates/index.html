@@ -31,7 +31,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 		<!-- Definition of stylesheets to use in the application. -->
 	<link
 		rel="icon"
-		href="{{url_for('static', filename='resources/media/icon_512.png')}}"
+		href="{{url_for('static', filename='media/phagegap-icon-white-512.png')}}"
 	/>
 	<link 
 		rel="stylesheet"
@@ -74,15 +74,27 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 	></script>
 	</head>
 	<body>
-		<ul data-role="materialtabs">
+		<ul class="pl-6 pr-6" data-role="materialtabs">
+			<img
+				class="mr-4"
+				src="{{url_for('static', filename='media/phagegap-icon-white-512.png')}}"
+				alt="Stylized bacteriophage with a blue-purple capsid containing a neural network motif."
+				style="width: auto; height: 48px;"
+			/>
 			<li class="active">
-				<a href="#home">HOME</a>
+				<a href="#home">
+					HOME
+				</a>
 			</li>
 			<li id="classification-tab" disabled>
-				<a href="#classification">FUNCTION PREDICTION</a>
+				<a href="#classification">
+					FUNCTION PREDICTION
+				</a>
 			</li>
 			<li>
-				<a href="#usage">USAGE</a>
+				<a href="#usage">
+					USAGE
+				</a>
 			</li>
 		</ul>
 
@@ -102,7 +114,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 							<p class="text-just w-50">
 								Despite the rapid growth of phage genome data, current annotation approaches still rely largely on sequence
 								homology, and many predicted proteins remain hypothetical or poorly characterized.
-								This "<i>phage unknome</i>" limits mechanistic insight into host takeover and the discovery of proteins with
+								This phage <i>unknome</i> limits mechanistic insight into host takeover and the discovery of proteins with
 								biotechnological potential.
 							</p>
 							<span id="home-relevance-image-credits" class="reduce-4 p-1">
@@ -120,14 +132,19 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 				</div>
 				<hr/>
 				<div class="row no-gap">
-					<div class="cell-12">
+					<div class="cell-6 centered">
+						<img
+							src="{{url_for('static', filename='media/phagegap-ga.png')}}"
+							alt="Graphical abstract of PhageGAP: The model features processing of protein sequences with a protein language model followed by function classification using a CNN. Processed sequences are placed in a t-SNE landscape of reference phage, bacterial, and viral proteins. Nearest neighbors are identified and sequence comparison, genomic context, and structural information can be explored, together with predicted function, to support hypothesis generation."
+							style="width: 80%; height: auto;"
+						/>
+					</div>
+					<div class="cell-6">
 						<div id="home-description" class="hero p-20">
-
-							<p class="text-just text-leader2 text-medium w-50 flex-right">
+							<p class="text-just text-leader2 text-medium flex-right">
 								<span class="phagegap-logo-text">PhageGAP</span> predicts curated functional classes for phage proteins using protein language model embeddings.
 							</p>
-
-							<p class="text-just w-50 flex-right">
+							<p class="text-just flex-right">
 								Proteins are placed within an interactive embedding landscape of reference phage, bacterial, and viral 
 								proteins and identifies their nearest neighbors.
 								Sequence comparison, genomic context, and structural information can then be explored together to support
@@ -139,8 +156,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 			</div>
 			<hr/>
 			<div class="reduce-2">
-				{% include "about/legal.html" %}
-				{% include "about/contact.html" %}
+				{% include "footer.html" %}
 			</div>
 		</div>
 
@@ -263,7 +279,7 @@ SNIWASLPGAGYGQFEHKADSLIAKFKEAGGTVREIDV"></textarea>
 									<!-- Prediction summary chart. -->
 									<div class="row">
 										<span id="category-probabilities-chart-label" class="label">
-											Prediction Summary
+											Function Prediction
 										</span>
 										<div id="category-probabilities-chart-container"></div>
 									</div>

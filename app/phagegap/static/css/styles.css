@@ -197,7 +197,7 @@ hr {
 }
 
 #home-relevance {
-	background-image: url("../resources/media/phage-bg.png");
+	background-image: url("../media/phage-bg.png");
 	background-size: contain;
 	background-position: right;
 	background-repeat: no-repeat;
@@ -282,8 +282,123 @@ hr {
 	border-radius: 3px;
 }
 
+.legal-section {
+	max-width: 80%;
+	margin: 0 auto;
+	padding: 0.75rem 3rem 1rem;
+	font-size: 0.8rem;
+	line-height: 1.25;
+}
+
+.legal-section h2 {
+	margin: 0 0 0.15rem;
+	font-size: 15rem;
+}
+
+.legal-section h3 {
+	margin: 0 0 0.55rem;
+	font-size: 0.95rem;
+}
+
+.legal-section h4 {
+	margin: 1rem 0 0.35rem;
+	font-size: 0.85rem;
+}
+
+.legal-section p {
+	margin: 0 0 0.55rem;
+}
+
+.legal-intro,
+.legal-meta {
+	color: #777;
+	font-size: 0.78rem;
+}
+
+.legal-content {
+	margin-top: 0.9rem;
+	background-color: var(--bg-color-2);
+	padding: 9px;
+	border-radius: 3px;
+}
+
+.legal-panel[hidden] {
+	display: none;
+}
+
+.legal-license-grid {
+	display: grid;
+	grid-template-columns: 110px 1fr;
+	gap: 0.35rem 1rem;
+	margin-bottom: 0.6rem;
+}
+
+.legal-license-grid .label {
+	font-weight: 600;
+}
+
+.legal-list {
+	margin: 0.35rem 0 0.6rem;
+	padding-left: 1.15rem;
+}
+
+.legal-list li {
+	margin-bottom: 0.2rem;
+}
+
+.legal-nav {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	margin-top: 0.9rem;
+	padding-top: 0.5rem;
+	border-top: 1px solid #ddd;
+}
+
+.legal-nav button {
+	appearance: none;
+	border: 0;
+	background: none;
+	padding: 0;
+	font: inherit;
+	font-size: 0.78rem;
+	color: #777;
+	cursor: pointer;
+}
+
+.legal-nav button:hover,
+.legal-nav button.active {
+	color: #000;
+}
+
+.legal-nav button.active {
+	font-weight: 600;
+}
+
+.legal-nav .separator {
+	margin: 0 0.55rem;
+	color: #aaa;
+	user-select: none;
+}
+
+@media screen and (max-width: 650px) {
+	.legal-section {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+
+	.legal-license-grid {
+		grid-template-columns: 1fr;
+		gap: 0.05rem;
+	}
+
+	.legal-license-grid .label:not(:first-child) {
+		margin-top: 0.4rem;
+	}
+}
+
 #usage {
-	min-height: calc(100vh - 5rem);
 	background: var(--bg-color-2);
 	color: var(--text-color);
 	padding: 1rem;
@@ -334,9 +449,4 @@ hr {
 .usage-section p {
 	text-align: justify;
 	padding-right: 1rem;
-}
-
-#footer {
-	background: var(--bg-color-3);
-	color: var(--text-light2-color);
 }
