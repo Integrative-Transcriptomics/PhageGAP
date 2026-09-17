@@ -28,6 +28,9 @@ export class CategoryProbabilities extends Chart {
 	showDetail(clicked) {
 		if (!this.echart) return;
 
+		// Adjust chart label.
+		document.getElementById("category-probabilities-chart-label").innerText = "Function Prediction: Top 3 Classes";
+
 		// Extract the top 3 categories and their probabilities from the entry.
 		let d = [
 			[clicked.top1, clicked["P(top1)"]],
@@ -93,6 +96,9 @@ export class CategoryProbabilities extends Chart {
 	 */
 	showSummary() {
 		if (!this.echart) return;
+
+		// Adjust chart label.
+		document.getElementById("category-probabilities-chart-label").innerText = "Function Prediction: Summary";
 
 		const probabilityCountsNovel = {};
 		const probabilityCountsKnown = {};
