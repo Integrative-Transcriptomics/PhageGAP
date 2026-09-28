@@ -4,7 +4,7 @@ From: python:3.12-slim
 %labels
     Author "Simon Hackl"
     Version 1.0.0
-    Description "PhageGAP Classifier Image"
+    Description "PhageGAP Classifier/Inference Service Image"
 
 %files
     src/phagegapclassifier/__init__.py /app/phagegapclassifier/__init__.py
@@ -18,8 +18,28 @@ From: python:3.12-slim
 
 %post
     cd /app
+
+    # Install system tools.
+    apt-get update && apt-get install -y --no-install-recommends \
+        findutils \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
     python -m pip install --no-cache-dir setuptools wheel
+
+    # Install CPU version of PyTorch separately to reduce image size. CUDA drivers will be loaded from the host machine.
+    # NOTE: The version has to be identical to the one specified in `requirements.txt`.
+    python -m pip install --no-cache-dir torch==2.13.0 --index-url https://pytorch.org
+
+    # Install remaining libraries.
     python -m pip install --no-cache-dir -r requirements.txt
+
+    # Delete tests and cache to reduce image size.
+    # NOTE: The python version number needs to be adjusted as the base image (From:) is changed.
+    find /usr/local/lib/python3.12/site-packages/ -type d -name "tests" -exec rm -rf {} +
+    find /usr/local/lib/python3.12/site-packages/ -type d -name "test" -exec rm -rf {} +
+    find /usr/local/lib/python3.12/site-packages/ -type d -name "__pycache__" -exec rm -rf {} +
+    find /usr/local/lib/python3.12/site-packages/ -name "*.pyc" -delete
 
 %environment
     export PHAGEGAP_BIND_ADDRESS=0.0.0.0
