@@ -1,6 +1,6 @@
-# TOML format configuration file for the `PhageGAP` classifier software.
+# TOML format configuration file for the PhageGAP classifier/inference service.
 
-title = "PhageGAP Classifer 1.0.0 Configuration"
+title = "PhageGAP classifier/inference service 1.0.0 configuration."
 
 [app]
 max_content_length = 500_000

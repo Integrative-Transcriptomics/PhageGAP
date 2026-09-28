@@ -4,7 +4,7 @@ From: python:3.12-slim
 %labels
     Author "Simon Hackl"
     Version 1.0.0
-    Description "PhageGAP Classifier/Inference Service Image"
+    Description "PhageGAP classifier/inference service apptainer image."
 
 %files
     src/phagegapinference/__init__.py /app/phagegapinference/__init__.py
