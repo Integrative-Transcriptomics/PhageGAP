@@ -5,14 +5,13 @@ import tomllib
 import joblib
 import torch
 import os
-import pandas as pd
 from typing import Any
 from pathlib import Path
 from flask import Flask
 from scipy.spatial import KDTree
-from phagegapclassifier.embed import load_embed_model, MODEL_CONFIGS
-from phagegapclassifier.predict import load_predict_model
-from phagegapclassifier.utils import set_determinism, extract_model_number
+from phagegapinference.embed import load_embed_model, MODEL_CONFIGS
+from phagegapinference.predict import load_predict_model
+from phagegapinference.utils import set_determinism, extract_model_number
 
 
 # Initialize logging configuration.
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 def load_config() -> dict[str, Any]:
 	"""Load application configurations from local `config.toml` file.
 	
-	The configuration file is expected to be located in the same directory as this script.
+	The configuration file is expected to be located in the same directory as this script is started from.
 	It should contain the following sections and keys:
 
 	[app]
@@ -31,7 +30,6 @@ def load_config() -> dict[str, Any]:
 	- max_form_memory_size: The maximum size (in bytes) of form data in memory. Default is 500,000 bytes.
 	- max_form_parts: The maximum number of parts in a multipart/form-data request. Default is 1,000.
 	- api_token_path: Path to the file containing a secure token for authentication. If not specified, the application will not use token authentication.
-	- structure_info_path: Path to a tab-delimited file containing protein structure information. If not specified, the application will not provide structure information.
 
 	[setup]
 	_______
@@ -51,8 +49,8 @@ def load_config() -> dict[str, Any]:
 
 	[manifold]
 	__________
-	- pca_path: Path to the saved PCA object for dimensionality reduction (**mandatory**).
-	- tsne_path: Path to the saved t-SNE object for dimensionality reduction (**mandatory**).
+	- pca_path: Path to the fitted PCA joblib file for dimensionality reduction (**mandatory**).
+	- tsne_path: Path to the fitted t-SNE joblib file for dimensionality reduction (**mandatory**).
 	"""
 	with open("config.toml", "rb") as file:
 		return tomllib.load(file)
@@ -180,11 +178,11 @@ def create_app() -> Flask:
 	}
 
 	# Register API blueprint.
-	from phagegapclassifier.api import api_blueprint
+	from phagegapinference.api import api_blueprint
 
 	app.register_blueprint(api_blueprint)
 
-	logger.info("PhageGap application initialized on %s.", device)
+	logger.info("PhageGAP inference service application initialized on %s.", device)
 
 	return app
 

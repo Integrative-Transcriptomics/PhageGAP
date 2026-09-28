@@ -1,5 +1,5 @@
 """
-API endpoints for the `phagegapclassifier` Flask app.
+API endpoints for the `phagegapinference` Flask app.
 """
 
 from __future__ import annotations
@@ -8,10 +8,10 @@ import logging
 import hmac
 import pandas as pd
 from flask import Blueprint, current_app, request, jsonify
-from phagegapclassifier.embed import preprocess_df, compute_embeddings
-from phagegapclassifier.pool import pool_embeddings
-from phagegapclassifier.predict import run_prediction
-from phagegapclassifier.utils import parse_sequence_data, prepare_for_pca
+from phagegapinference.embed import preprocess_df, compute_embeddings
+from phagegapinference.pool import pool_embeddings
+from phagegapinference.predict import run_prediction
+from phagegapinference.utils import parse_sequence_data, prepare_for_pca
 
 
 # Initialize logging configuration.
@@ -59,7 +59,7 @@ def get_active():
 def get_prediction():
 	"""`POST` request endpoint to predict functional classes for a given set of protein sequences.
 	
-	See :func:`phagegapclassifier.api._predict` for details.
+	See :func:`phagegapinference.api._predict` for details.
 	"""
 	try:
 		# Parse sequence data.
@@ -79,7 +79,7 @@ def get_prediction():
 def _get_extension(key: str):
 	"""Return a process-local app extensions for the specified key.
 	
-	See :func:`~phagegapclassifier.__init__` for the structure of the extension dictionary.
+	See :func:`~phagegapinference.__init__` for the structure of the extension dictionary.
 
 	Parameters
 	__________

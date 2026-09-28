@@ -7,13 +7,13 @@ From: python:3.12-slim
     Description "PhageGAP Classifier/Inference Service Image"
 
 %files
-    src/phagegapclassifier/__init__.py /app/phagegapclassifier/__init__.py
-    src/phagegapclassifier/api.py /app/phagegapclassifier/api.py
-    src/phagegapclassifier/embed.py /app/phagegapclassifier/embed.py
-    src/phagegapclassifier/model.py /app/phagegapclassifier/model.py
-    src/phagegapclassifier/pool.py /app/phagegapclassifier/pool.py
-    src/phagegapclassifier/predict.py /app/phagegapclassifier/predict.py
-    src/phagegapclassifier/utils.py /app/phagegapclassifier/utils.py
+    src/phagegapinference/__init__.py /app/phagegapinference/__init__.py
+    src/phagegapinference/api.py /app/phagegapinference/api.py
+    src/phagegapinference/embed.py /app/phagegapinference/embed.py
+    src/phagegapinference/model.py /app/phagegapinference/model.py
+    src/phagegapinference/pool.py /app/phagegapinference/pool.py
+    src/phagegapinference/predict.py /app/phagegapinference/predict.py
+    src/phagegapinference/utils.py /app/phagegapinference/utils.py
     requirements.txt /app/requirements.txt
 
 %post
@@ -57,4 +57,4 @@ From: python:3.12-slim
         --timeout 600 \
         --access-logfile - \
         --error-logfile - \
-        "phagegapclassifier:app"
+        "phagegapinference:app"

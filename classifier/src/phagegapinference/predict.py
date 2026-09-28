@@ -1,7 +1,9 @@
 """
-Function class prediction utilities to load and apply `phagegapclassifier.model` within the `phagegapclassifier` package.
+Function class prediction utilities to load and apply `phagegapinference.model` within the `phagegapinference` package.
 
-Currently, only :class:`phagegapclassifier.model.CNN` and :class:`phagegapclassifier.model.CNN_MLP` are supported.
+Currently, only :class:`phagegapinference.model.CNN` and :class:`phagegapinference.model.CNN_MLP` are supported.
+
+The code is based on https://github.com/Integrative-Transcriptomics/PhageGAP-model/blob/5f9b63d160958ca5e96a1f0cc45be057d1fe5582/src/predict/predict.py.
 """
 
 from __future__ import annotations
@@ -11,7 +13,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict
 from torch.nn.utils.rnn import pad_sequence
-from phagegapclassifier.model import CNN, CNN_MLP
+from phagegapinference.model import CNN, CNN_MLP
 
 
 # Initialize logging configuration.

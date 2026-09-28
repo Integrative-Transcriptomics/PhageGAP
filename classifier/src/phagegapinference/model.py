@@ -1,10 +1,12 @@
 """
-Function class prediction model implementations of `phagegapclassifier`.
+Function class prediction model implementations of `phagegapinference`.
 
-Currently, only :class:`phagegapclassifier.model.CNN` and :class:`phagegapclassifier.model.CNN_MLP` are supported.
+Currently, only :class:`phagegapinference.model.CNN` and :class:`phagegapinference.model.CNN_MLP` are supported.
 
-Model loading and prediction routines are provided with :func:`phagegapclassifier.predict.load_predict_model`
-and :func:`phagegapclassifier.predict.run_prediction`.
+Model loading and prediction routines are provided with :func:`phagegapinference.predict.load_predict_model`
+and :func:`phagegapinference.predict.run_prediction`.
+
+The code is based on https://github.com/Integrative-Transcriptomics/PhageGAP-model/blob/5f9b63d160958ca5e96a1f0cc45be057d1fe5582/src/classify/model.py.
 """
 
 from __future__ import annotations

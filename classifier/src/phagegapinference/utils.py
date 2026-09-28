@@ -1,5 +1,7 @@
 """
 Utility functions of the `phagegapclassifier` package.
+
+The code is based on https://github.com/Integrative-Transcriptomics/PhageGAP-model/blob/5f9b63d160958ca5e96a1f0cc45be057d1fe5582/src/utils.py.
 """
 
 from __future__ import annotations

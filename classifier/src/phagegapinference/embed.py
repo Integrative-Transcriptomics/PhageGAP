@@ -1,9 +1,11 @@
 """
-pLM model implementations of the `phagegapclassifier` package.
+pLM model implementations of the `phagegapinference` package.
 
 Currently only ProtT5 is supported. Other models are not yet implemented. If you want
 to re-add support for other models, please see the `embed.py` file in the `deprecated`
 folder of the `phagegap` code repository.
+
+The code is based on https://github.com/Integrative-Transcriptomics/PhageGAP-model/blob/5f9b63d160958ca5e96a1f0cc45be057d1fe5582/src/embed/embed.py.
 """
 
 from __future__ import annotations
@@ -15,12 +17,8 @@ import torch.nn as nn
 import pandas as pd
 import numpy as np
 from transformers import T5Tokenizer, T5EncoderModel
-from huggingface_hub import login as hf_login
-from deprecated import deprecated
 from tqdm import tqdm
-from pathlib import Path
 from typing import Tuple, Optional, Dict, Any
-from deprecated import deprecated
 
 
 # Initialize logging configuration.
@@ -69,9 +67,9 @@ def preprocess_df(df: pd.DataFrame, model_type: str) -> pd.DataFrame:
 	__________
 	df (pd.DataFrame):
 		DataFrame containing protein sequences and metadata. Must contain a column "protein_seq".
-		See :func:`phagegapclassifier.utils.parse_sequence_data` for expected format.
+		See :func:`phagegapinference.utils.parse_sequence_data` for expected format.
 	model_type (str):
-		Type of model to use for embedding. Options: "prot_t5", "prost_t5", "prot_t5xxl", "prost_t5".
+		Type of model to use for embedding. Options: "prot_t5", "prost_t5", "prot_t5xxl".
 
 	Returns
 	_______
@@ -138,18 +136,10 @@ def load_embed_model(model_type: str, device: str) -> Tuple[nn.Module, Optional[
 	model = None
 	tokenizer = None
 
-	# If the configuration requires login, attempt to log in to Hugging Face Hub.
-	if config.get("requires_login", False):
-		login_to_huggingface()
 	try:
 		if loader == "transformers":
-			if model_type == "esm2_15b":
-				logger.error("ESM2_15B model loading is currently not implemented.")
-			elif model_type == "glm2":
-				logger.error("gLM2 model loading is currently not implemented.")
-			else:
-				# Load the model from pretrained weights.
-				model = model_class.from_pretrained(hf_id, **load_kwargs)
+			# Load the model from pretrained weights.
+			model = model_class.from_pretrained(hf_id, **load_kwargs)
 
 			# Load tokenizer if a tokenizer class is specified in the configuration.
 			if tokenizer_class:
@@ -162,7 +152,7 @@ def load_embed_model(model_type: str, device: str) -> Tuple[nn.Module, Optional[
 				model.to(torch.float32)
 		else:
 			# Native ESM loader
-			logger.error("Native ESM loader is not fully implemented.")
+			logger.error("Native ESM loader is currently not supported.")
 
 		if model is None:
 			raise RuntimeError(f"Failed to load model for {model_type}")
@@ -170,8 +160,8 @@ def load_embed_model(model_type: str, device: str) -> Tuple[nn.Module, Optional[
 		if post_load_hook:
 			post_load_hook(model)
 
-		if model_type not in ("glm2", "esmc_6b"):
-			model.to(device).eval()
+		# Load the model onto the specified device and set it to evaluation mode.
+		model.to(device).eval()
 
 		logger.info(f"Model {model_type} successfully initialized on {device.type.upper()}.")
 		return model, tokenizer
@@ -199,7 +189,7 @@ def compute_embeddings(model_type: str, df: pd.DataFrame, model: nn.Module, toke
 	model (nn.Module):
 		Pretrained model to use for embedding.
 	tokenizer (Optional[T5Tokenizer]):
-		Tokenizer required for ProtT5, ProstT5, and gLM2 models.
+		Tokenizer required for ProtT5/ProstT5 models.
 	only_last (bool):
 		Whether only the final representation embedding should be returned. If False, returns all hidden layers
 
@@ -227,13 +217,9 @@ def compute_embeddings(model_type: str, df: pd.DataFrame, model: nn.Module, toke
 	embed_dict = {}
 
 	# Run embedding. Currently, only "prot_t5", "prost_t5", "prot_t5xxl" are supported.
-	if model_type == "esm2_15b":
-		raise NotImplementedError("esm2_15b embedding is currently not implemented.")
-	elif model_type == "esmc_6b":
-		raise NotImplementedError("esmc_6b embedding is currently not implemented.")
+	if not model_type in ("prot_t5", "prost_t5", "prot_t5xxl"):
+		raise NotImplementedError(f"Embedding with {model_type} is not implemented. Supported options: 'prot_t5', 'prost_t5', 'prot_t5xxl'.")
 	else:
-		if not model_type in ("prot_t5", "prost_t5", "prot_t5xxl"):
-			raise NotImplementedError(f"Embedding with {model_type} is not implemented. Supported options: 'prot_t5', 'prost_t5', 'prot_t5xxl'.")
 		if tokenizer is None:
 			raise ValueError(f"Tokenizer is required for embedding with {model_type} but was not provided.")
 		# Process sequences:
@@ -314,46 +300,3 @@ def embed_seq_T5(seq: str, model: T5EncoderModel, tokenizer: T5Tokenizer, only_l
 			hidden_states = [h.squeeze(0).cpu().numpy()[1:-1, :] for h in all_hidden_states]
 
 		return hidden_states
-
-
-@deprecated(version='1.0.0', reason="Models that require huggingface login are not implemented. Please use models that do not require authentication.")
-def login_to_huggingface(token_path_str: Optional[str] = None):
-	"""Attempts to log in to Hugging Face Hub, optionally using a token from a specified path.
-	
-	`@deprecated(version='1.0.0', reason="Models that require huggingface login are not implemented. Please use models that do not require authentication.")`
-	"""
-	logger.info("Attempting to log in to Hugging Face Hub...")
-	token = None
-	token_file = None
-	if token_path_str:
-		token_file = Path(token_path_str)
-	else:
-		# Default token locations
-		potential_paths = [
-			Path.home() / ".cache" / "huggingface" / "token",
-			Path.home() / ".huggingface" / "token",
-		]
-		for p_path in potential_paths:
-			if p_path.is_file():
-				token_file = p_path
-				break
-
-	if token_file and token_file.is_file():
-		try:
-			token = token_file.read_text().strip()
-			logger.info(f"• Found Hugging Face token file at {token_file}")
-		except Exception as e:
-			logger.warning(f"• Could not read token from {token_file}: {e}")
-			token = None
-
-	try:
-		if token:
-			hf_login(token=token)
-			logger.info("• Hugging Face login successful (used token from file).")
-		else:
-			logger.warning("• No token file specified or found in default locations. Attempting default login (e.g., cached session, env var).")
-			hf_login()  # Attempts login using env variables or cached token.
-			logger.info("• Hugging Face login successful or already authenticated (default method).")
-	except Exception as login_exc:
-		logger.warning(f"• Hugging Face login attempt failed: {login_exc}")
-		logger.info("...Proceeding. This may fail if the model requires authentication for download.")
