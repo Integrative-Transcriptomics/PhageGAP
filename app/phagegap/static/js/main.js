@@ -77,8 +77,30 @@ export function initApp() {
 	// Initialize all MetroUI components.
 	Metro.init();
 
-	// Populate the about page index.
+	// Populate the usage page index.
 	indexUsageTab();
+
+	// Register the index page footer navigation.
+	document.querySelectorAll("#legal-nav button").forEach((button) => {
+		button.addEventListener("click", () => {
+			// Hide all panels.
+			document.querySelectorAll(".legal-panel").forEach((panel) => {
+				panel.hidden = true;
+			});
+
+			// Reset all buttons.
+			document.querySelectorAll("#legal-nav button").forEach((item) => {
+				item.classList.remove("active");
+			});
+
+			// Show selected panel.
+			const target = document.getElementById(button.dataset.target);
+			target.hidden = false;
+
+			// Mark selected link.
+			button.classList.add("active");
+		});
+	});
 
 	// Initialize charts.
 	embeddingLandscape = new EmbeddingLandscape(

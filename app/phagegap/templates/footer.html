@@ -1,26 +1,23 @@
-<section id="legal-information" class="about-section legal-section fixed-bottom">
-
-	<div class="legal-content">
+<section id="legal-information" class="reduce-2">
+	<div id="legal-content">
 
 		<!-- Terms of Use -->
 		<div id="legal-terms" class="legal-panel">
 			<h3>Terms of Use</h3>
-
 			<div class="legal-license-grid">
 				<div class="label">Software</div>
 				<div>
-					The PhageGAP source code is distributed under the
+					The <a href="https://github.com/Integrative-Transcriptomics/PhageGAP" target="_blank">PhageGAP source code</a>
+					is distributed under the
 					<a href="https://www.gnu.org/licenses/gpl-3.0.en.html"
 					   target="_blank"
 					   rel="noopener">
 						GNU General Public License v3.0
 					</a>.
-					See also the repository <code>LICENSE</code> file.
 				</div>
-
 				<div class="label">Model</div>
 				<div>
-					The trained PhageGAP prediction model is separately licensed under
+					The pretrained PhageGAP model is licensed under
 					<a href="https://creativecommons.org/licenses/by-nc/4.0/"
 					   target="_blank"
 					   rel="noopener">
@@ -29,31 +26,24 @@
 					It may be used, shared, and adapted for non-commercial purposes
 					subject to attribution and the terms of the license.
 				</div>
-
-				<div class="label">Hosted service</div>
+				<div class="label">Hosted Service</div>
 				<div>
-					The hosted PhageGAP service and its model inference functionality are
+					The PhageGAP web server and its inference functionality are
 					provided for non-commercial research and educational use.
-					Commercial use requires prior written permission from the maintainers.
+					Commercial use requires written permission from the maintainers.
 				</div>
 			</div>
-
 			<p class="legal-meta">
-				The non-commercial restrictions applying to the model and hosted service
-				do not modify the rights granted for the GPL-3.0 licensed source code.
+				The non-commercial restrictions do not modify the rights granted for the GPL-3.0 licensed source code.
 			</p>
 
 			<h4>Privacy and Data Handling</h4>
-
 			<ul class="legal-list">
 				<li>
-					Cookies are not used for advertising, profiling, or cross-site tracking.
-					<code>phagegap_consent</code> records consent required before API requests are accepted.
-					<code>phagegap_session</code> is used for request protection, including CSRF protection.
+					PhageGAP uses a consent- and CRSF-Cookie. Cookies are not used for advertising, profiling, or cross-site tracking.
 				</li>
 				<li>
-					Submitted FASTA and optional GFF data are processed for the requested
-					analysis and are not persistently stored by the PhageGAP application.
+					Submitted FASTA and optional GFF data are processed for the requested analysis and are not persistently stored.
 				</li>
 				<li>
 					PhageGAP does not use user accounts or database-backed storage for submitted sequence data.
@@ -64,35 +54,29 @@
 			</ul>
 
 			<p class="legal-meta">
-				Standard server infrastructure may process technical connection information
-				such as IP addresses, request timestamps, and HTTP metadata where required
-				to operate and secure the service.
+				Standard server infrastructure may process technical connection information such as IP addresses, request timestamps,
+				and HTTP metadata where required to operate and secure the service.
 			</p>
 		</div>
 
 		<!-- Disclaimer -->
 		<div id="legal-disclaimer" class="legal-panel" hidden>
 			<h3>Disclaimer</h3>
-
 			<p>
 				PhageGAP and its software are provided without warranty as described in
 				the applicable licenses. Predictions represent computational evidence and
 				should be independently evaluated within an appropriate scientific analysis workflow.
 			</p>
-
 			<h4>Medical Disclaimer</h4>
-
 			<p>
 				PhageGAP is intended for research and informational purposes only.
 				It is not a medical device and is not intended for diagnosis, prevention,
 				monitoring, prediction, prognosis, treatment, or alleviation of disease.
 			</p>
-
 			<p>
 				Results may be incomplete, inaccurate, or subject to methodological
 				limitations and must not be used as the sole basis for clinical or medical decisions.
 			</p>
-
 			<p>
 				Interpretation in a medical or clinical context should be performed by
 				appropriately qualified healthcare or laboratory professionals using validated methods.
@@ -102,22 +86,18 @@
 		<!-- Contact -->
 		<div id="legal-contact" class="legal-panel" hidden>
 			<h3>Contact</h3>
-
 			<p>
 				For technical questions, licensing enquiries, or issues, use the
-				<a href="https://github.com/Integrative-Transcriptomics/PhageGap"
-				   target="_blank"
-				   rel="noopener">
+				<a href="https://github.com/Integrative-Transcriptomics/PhageGAP"
+				   target="_blank">
 					PhageGAP project repository
 				</a>
 				or contact the maintainer.
 			</p>
-
 			<p>
 				<strong>Simon Hackl</strong><br>
 				<code>simon.hackl(at)uni-tuebingen.de</code>
 			</p>
-
 			<p class="legal-meta">
 				Integrative Transcriptomics<br>
 				Institute for Bioinformatics and Medical Informatics<br>
@@ -128,88 +108,50 @@
 		<!-- Citation -->
 		<div id="legal-citation" class="legal-panel" hidden>
 			<h3>Citation</h3>
-
 			<p>If you use PhageGAP in your research, please cite:</p>
-
 			<p>
 				<strong>
-					<i>PhageGAP: Prediction of phage protein function using protein language models</i>
+					<i>PhageGAP: prediction and exploration of phage protein function beyond homology transfer</i>
 				</strong><br>
 				Simon Hackl, Mona Scheurenbrand, Kay Nieselt,
 				Maik Wolfram-Schauerte
 			</p>
-
 			<p class="legal-meta">
 				Unpublished software ·
-				<a href="https://github.com/Integrative-Transcriptomics/PhageGap"
-				   target="_blank"
-				   rel="noopener">
+				<a href="https://github.com/Integrative-Transcriptomics/PhageGAP"
+				   target="_blank">
 					Source code
 				</a>
 			</p>
 		</div>
 
 	</div>
-
-
-	<!-- Navigation -->
-	<nav class="legal-nav" aria-label="Legal information sections">
+	<nav id="legal-nav">
 		<button type="button"
 				class="active"
-				data-target="legal-terms"
-				aria-selected="true">
+				data-target="legal-terms">
 			Terms of Use
 		</button>
 
 		<span class="separator">•</span>
 
 		<button type="button"
-				data-target="legal-disclaimer"
-				aria-selected="false">
+				data-target="legal-disclaimer">
 			Disclaimer
 		</button>
 
 		<span class="separator">•</span>
 
 		<button type="button"
-				data-target="legal-contact"
-				aria-selected="false">
+				data-target="legal-contact">
 			Contact
 		</button>
 
 		<span class="separator">•</span>
 
 		<button type="button"
-				data-target="legal-citation"
-				aria-selected="false">
+				data-target="legal-citation">
 			Citation
 		</button>
 	</nav>
-
 </section>
-
-<script>
-	document.querySelectorAll(".legal-nav button").forEach((button) => {
-		button.addEventListener("click", () => {
-
-			// Hide all panels
-			document.querySelectorAll(".legal-panel").forEach((panel) => {
-				panel.hidden = true;
-			});
-
-			// Reset all buttons
-			document.querySelectorAll(".legal-nav button").forEach((item) => {
-				item.classList.remove("active");
-				item.setAttribute("aria-selected", "false");
-			});
-
-			// Show selected panel
-			const target = document.getElementById(button.dataset.target);
-			target.hidden = false;
-
-			// Mark selected link
-			button.classList.add("active");
-			button.setAttribute("aria-selected", "true");
-		});
-	});
-</script>

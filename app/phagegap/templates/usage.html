@@ -19,13 +19,14 @@
 	<h1>How to use PhageGAP</h1>
 
 	<h2>Quick Start</h2>
-	On the Function Prediction page, follow these steps to analyze your protein sequences:
+	<p>On the Function Prediction page, follow these steps to analyze your protein sequences:</p>
 	<ol>
 		<li>Paste protein sequences or upload a FASTA file.</li>
 		<li>Click <code>Function Prediction</code>.</li>
 		<li>Explore the submitted proteins in the <code>Embedding Landscape</code>.</li>
-		<li>Select a protein to inspect its prediction, nearest neighbor sequence alignment, and structure.</li>
+		<li>Select a protein to inspect its prediction and nearest-neighbor sequence, structure, and similarity.</li>
 		<li>Optionally add genomic context from a GFF3 file.</li>
+		<li>Download the results or save the complete session for later use.</li>
 	</ol>
 </section>
 
@@ -39,7 +40,7 @@
 
 	<ul>
 		<li>Sequences must be provided in FASTA format.</li>
-		<li>The first token after <code>&gt;</code> is used as the protein ID; remaining text is used as its description.</li>
+		<li>The protein ID is derived from the FASTA header; remaining text is used as its description.</li>
 		<li>Ambiguous amino acids are accepted and converted to <code>X</code>.</li>
 		<li>Protein IDs should be unique within a submission.</li>
 	</ul>
@@ -56,10 +57,11 @@ MDSK...</code></pre>
 	<p>
 		Click <code>Function Prediction</code> to analyze the submitted proteins.
 		Predictions are added to the current session and shown as <code>User Data</code>
-		in the <code>Embedding Landscape</code>.
+		in the <code>Embedding Landscape</code>. Additional submissions are appended to
+		the active session.
 	</p>
 
-	<div class="remark info">
+	<div class="remark warning">
 		<ul>
 			<li>Cookie consent must be accepted before classification is enabled.</li>
 			<li>Submitted protein sequences are processed for analysis but are not persistently stored by PhageGAP.</li>
@@ -77,36 +79,41 @@ MDSK...</code></pre>
 	</p>
 
 	<ul>
-		<li>Reference proteins are colored by functional category.</li>
-		<li>Submitted proteins are shown as <code>User Data</code>.</li>
-		<li>Hover over points to inspect predictions, nearest-neighbor information, and available metadata.</li>
-		<li>Use the zoom controls to inspect individual regions of the landscape.</li>
+		<li>Reference proteins are colored by their functional class; submitted proteins are shown as <code>User Data</code>.</li>
+		<li>Use the legend to show or hide individual functional classes.</li>
+		<li>Hover over proteins to inspect their annotation, prediction, and nearest-neighbor information.</li>
+		<li>Use the toolbox to zoom, reset the view, or hide reference-identical submitted proteins.</li>
+		<li>Set a minimum prediction probability to hide submitted proteins below the selected threshold.</li>
 	</ul>
 
 	<p>
-		When no protein is selected, the summary view shows the distribution of the
-		highest predicted sub-level class probabilities across the submitted proteins,
-		separated into reference-identical and non-identical proteins.
+		When no protein is selected, the <code>Function Prediction</code> panel summarizes
+		the highest predicted class probabilities across the submitted proteins, separated
+		into reference-identical and non-identical proteins.
 	</p>
 
-	<p>Select a <code>User Data</code> point to inspect that protein in detail:</p>
+	<p>
+		Select a <code>User Data</code> protein by clicking its point or using the searchable
+		protein-selection menu. The detail views are synchronized with the current selection.
+	</p>
 
 	<ul>
-		<li>The selected protein is linked to its nearest reference protein in the embedding landscape.</li>
-		<li>
-			<code>Function Prediction and Nearest-Neighbor Structure</code> shows the
-			highest-ranked functional predictions and, when available, the structure of the nearest neighbor.
-		</li>
-		<li>
-			<code>Nearest-Neighbor Sequence Alignment</code> shows the alignment between
-			the submitted protein and its nearest neighbor.
-		</li>
-		<li>Alignment coloring is linked to the structure view.</li>
-		<li>Use the alignment zoom control and structure maximize control for more detailed inspection.</li>
+		<li>The retained nearest reference proteins are connected to the selected protein in the <code>Embedding Landscape</code>.</li>
+		<li>Hover over a connection to inspect the corresponding nearest neighbor and its embedding distance.</li>
+		<li>Click a connection to inspect a different retained nearest neighbor; the closest neighbor is selected by default.</li>
+		<li><code>Function Prediction</code> shows the three highest-ranked functional predictions and their probabilities.</li>
+		<li><code>Nearest-Neighbor Structure</code> shows the available structure and metadata for the selected nearest neighbor.</li>
+		<li><code>Nearest-Neighbor Sequence Alignment</code> shows its pairwise alignment with the submitted protein and reports sequence identity.</li>
+		<li>Alignment colors distinguish matches, mismatches, insertions, and deletions and are linked to the structure view.</li>
+		<li>Use the alignment zoom control and interactive structure controls for detailed inspection.</li>
 	</ul>
 
-	<p class="remark info">
+	<p class="remark warning">
 		A structure may not be available for every reference protein.
+	</p>
+
+	<p>
+		The sizes of the main visualization panels can be adjusted by dragging their dividers.
 	</p>
 </section>
 
@@ -123,9 +130,11 @@ MDSK...</code></pre>
 
 	<ul>
 		<li>Only <code>CDS</code> features are displayed.</li>
-		<li>The GFF <code>Name</code> attribute must match the corresponding FASTA protein ID.</li>
-		<li>Matched CDS features are colored according to their predicted functional category.</li>
-		<li>Selecting a protein focuses the genomic view on its local genomic neighborhood.</li>
+		<li>The GFF protein identifier must match the corresponding FASTA protein ID.</li>
+		<li>Matched CDS features are colored according to their predicted functional class.</li>
+		<li>Selecting a protein centers the genomic view on its local neighborhood.</li>
+		<li>Selecting a CDS in the genomic view selects the corresponding protein in the <code>Embedding Landscape</code>.</li>
+		<li>Use the genomic zoom controls to inspect individual loci or the complete annotated region.</li>
 	</ul>
 </section>
 
@@ -134,8 +143,8 @@ MDSK...</code></pre>
 
 	<ul>
 		<li><code>Download Results</code> exports prediction results as TSV.</li>
-		<li><code>Download Session</code> saves the current analysis as compressed JSON (<code>.json.gz</code>).</li>
-		<li><code>Reload Session</code> restores a previously saved session.</li>
+		<li><code>Download Session</code> saves the complete current analysis as compressed JSON (<code>.json.gz</code>).</li>
+		<li><code>Reload Session</code> restores a previously saved session for continued exploration or additional predictions.</li>
 		<li><code>Screenshot</code> exports the current analysis panels as PNG.</li>
 	</ul>
 </section>
