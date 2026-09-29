@@ -1,4 +1,4 @@
-"""Utility functions for the PhageGap web application."""
+"""Utility functions for the PhageGAP web application."""
 
 from __future__ import annotations
 

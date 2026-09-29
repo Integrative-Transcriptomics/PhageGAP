@@ -1,5 +1,5 @@
 """
-API endpoints for the `phagegap` Flask app.
+API endpoints for the PhageGAP Flask web application.
 """
 
 from __future__ import annotations
@@ -26,10 +26,6 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask-Limiter for rate limiting API requests.
 limiter = Limiter(key_func=get_remote_address, app=app)
-
-# Define the URL of the PhageGAP classifier service.
-# TODO: This needs to be queried before each request in the future.
-CLASSIFIER_URL = "http://134.2.9.251:20101"
 
 
 @app.before_request
@@ -235,11 +231,13 @@ def serve_classifier_prediction():
 
 		if app.extensions["emulate"]:
 			response_data = _emulate_classifier_response(user_results)
+		elif app.extensions["inference_service_url"] is None:
+			return "The PhageGAP inference service is not configured.", 500
 		else :
 			try:
 				# Forward the original FASTA text to the classifier apptainer.
 				response = requests.get(
-					f"{CLASSIFIER_URL}/predict",
+					f"{app.extensions["inference_service_url"]}/predict",
 					data=sequence_text.encode("utf-8"),
 					headers={
 						"Authorization": (

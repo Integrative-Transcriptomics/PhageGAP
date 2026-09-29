@@ -23,12 +23,21 @@ except ValueError:
 	logger.warning("Invalid value for EMULATE environment variable. Defaulting to False.")
 	app.extensions["emulate"] = False
 
+# Load inference service URL from environment variable.
+logger.debug("Loading inference service URL from environment variable.")
+try :
+	app.extensions["inference_service_url"] = str(os.getenv("INFERENCE_SERVICE_URL"))
+except KeyError:
+	logger.warning("INFERENCE_SERVICE_URL environment variable is not set. The application will not be able to run predictions.")
+	app.extensions["inference_service_url"] = None
+
 # Load API token.
+secrets_dir = Path(os.getenv("PHAGEGAP_SECRETS_DIR", "/app/secrets"))
+
 logger.debug("Loading API token from static resources.")
 api_token = None
 try:
-	# TODO: We might want to change how we load the API token in the future, e.g., by using environment variables or a configuration file.
-	api_token_path = Path(app.static_folder).joinpath("secrets/phagegap-api-token")
+	api_token_path = secrets_dir / "phagegap-api-token"
 	api_token = api_token_path.read_text(encoding="utf-8").strip()
 	if len(api_token) < 32:
 		logger.warning("API token should contain at least 32 characters for security reasons.")
@@ -48,10 +57,10 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_NAME"] = "phagegap_session"
 
-# Load secret key for session signing.
+# Load key for session signing.
 api_key = None
 try:
-	api_key_path = Path(app.static_folder).joinpath("secrets/phagegap-api-key")
+	api_key_path = secrets_dir / "phagegap-api-key"
 	api_key = api_key_path.read_text(encoding="utf-8").strip()
 	if len(api_key) < 32:
 		logger.warning("Secret key should contain at least 32 characters for security reasons.")
@@ -71,7 +80,7 @@ app.extensions["metadata"] = metadata_df
 
 # Load structure information from static resources into a DataFrame and validate its contents.
 logger.debug("Loading structure information from static resources.")
-structure_info_path = Path(app.static_folder).joinpath("data/phagegap-structures.tsv.gz")
+structure_info_path = Path(app.static_folder).joinpath("data/phagegap-structures-metadata.tsv.gz")
 if structure_info_path is None:
 	logger.warning("Structure information path is not specified; the application will not provide structure information.")
 	structure_info_df = None
