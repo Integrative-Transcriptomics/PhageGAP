@@ -1,12 +1,7 @@
-inference/images/*
-inference/models/*
-inference/src/deprecated/
-
-app/phagegap/static/secrets/*
-app/phagegap/static/data/*
-app/phagegap/__pycache__/*
-app/images/*
-
+images/*
+models/*
+data/*
 secrets/*
+app/phagegap/__pycache__/*
 .vscode
 .local
